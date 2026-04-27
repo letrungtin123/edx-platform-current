@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Open edX / static build outputs
+common/static/bundles/
+common/static/common/js/vendor/
+cms/static/css/
+cms/static/js/i18n/
+cms/static/js/xblock.v1-i18n/
+lms/static/css/
+lms/static/js/i18n/
+lms/static/js/xblock.v1-i18n/
+lms/static/certificates/css/
+
+# Tutor / local env
+.env
+.env.*
+*.local
+cms/envs/tutor/
+lms/envs/tutor/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Temporary
+tmp/
+temp/
+
+node_modules
+node_modules/
+**/node_modules/
+**/__pycache__/
+*.pyc
+*.pyo
+Open_edX.egg-info
+Open_edX.egg-info/
+CHECK_MOUNT.txt
+results.txt

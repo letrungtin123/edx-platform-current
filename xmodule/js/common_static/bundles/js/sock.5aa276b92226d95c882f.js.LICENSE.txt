@@ -1,0 +1,12 @@
+/*!
+ * Smooth Scroll - v1.4.10 - 2013-03-02
+ * https://github.com/kswedberg/jquery-smooth-scroll
+ * Copyright (c) 2013 Karl Swedberg
+ * Licensed MIT (https://github.com/kswedberg/jquery-smooth-scroll/blob/master/LICENSE-MIT)
+ */
+
+/**
+ * @license RequireJS domReady 2.0.1 Copyright (c) 2010-2012, The Dojo Foundation All Rights Reserved.
+ * Available via the MIT or new BSD license.
+ * see: http://github.com/requirejs/domReady for details
+ */

@@ -1,0 +1,25 @@
+/*
+      * Underscore.string
+      * (c) 2010 Esa-Matti Suuronen <esa-matti aet suuronen dot org>
+      * Underscore.string is freely distributable under the terms of the MIT license.
+      * Documentation: https://github.com/epeli/underscore.string
+      * Some code is borrowed from MooTools and Alexandru Marasteanu.
+      * Version '3.3.6'
+      * @preserve
+      */
+
+/*
+* Underscore.string
+* (c) 2010 Esa-Matti Suuronen <esa-matti aet suuronen dot org>
+* Underscore.string is freely distributable under the terms of the MIT license.
+* Documentation: https://github.com/epeli/underscore.string
+* Some code is borrowed from MooTools and Alexandru Marasteanu.
+* Version '3.3.6'
+* @preserve
+*/
+
+/*!
+  * $script.js JS loader & dependency manager
+  * https://github.com/ded/script.js
+  * (c) Dustin Diaz 2014 | License MIT
+  */

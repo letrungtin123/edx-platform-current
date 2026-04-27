@@ -1,0 +1,844 @@
+# #-#-#-#-#  django.po (edx-ora2)  #-#-#-#-#
+# edX translation file
+# Copyright (C) 2018 edX
+# This file is distributed under the GNU AFFERO GENERAL PUBLIC LICENSE.
+# EdX Team <info@edx.org>, 2018.
+# 
+# Translators:
+# Brian Smith, 2025
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: edx-ora2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-30 00:45+0000\n"
+"PO-Revision-Date: 2025-11-17 07:23+0000\n"
+"Last-Translator: Brian Smith, 2025\n"
+"Language-Team: Greek (https://app.transifex.com/open-edx/teams/301281/el/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: el\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: assessment/api/student_training.py:191
+msgid ""
+"If your assignment includes a learner training step, the rubric must have at"
+" least one criterion, and that criterion must have at least one option."
+msgstr ""
+"Εάν η αλληλοαξιολόγησή σας περιλαμβάνει βήμα εξάσκησης των σπουδαστών, η "
+"κατηγορία πρέπει να περιλαμβάνει τουλάχιστον ένα κριτήριο και το κριτήριο "
+"αυτό θα πρέπει να έχει τουλάχιστον μία επιλογή."
+
+#: assessment/api/student_training.py:217
+#, python-brace-format
+msgid ""
+"Example {example_number} has an invalid option for \"{criterion_name}\": "
+"\"{option_name}\""
+msgstr ""
+"Το παράδειγμα {example_number} έχει μια λανθασμένη επιλογή για το "
+"\"{criterion_name}\": \"{option_name}\""
+
+#: templates/legacy/edit/oa_edit_basic_settings_list.html:102
+#: templates/legacy/leaderboard/oa_leaderboard_show.html:8
+#: templates/legacy/leaderboard/oa_leaderboard_waiting.html:10
+msgid "Top Responses"
+msgstr "Κορυφαίες Απαντήσεις"
+
+#: templates/legacy/edit/oa_edit_criterion.html:55 xblock/studio_mixin.py:57
+msgid "Optional"
+msgstr "Προαιρετικό"
+
+#: templates/legacy/edit/oa_edit_criterion.html:56
+#: templates/legacy/oa_rubric.html:13
+#: templates/legacy/student_training/student_training.html:93
+#: xblock/studio_mixin.py:56
+msgid "Required"
+msgstr "Απαιτείται"
+
+#: templates/legacy/edit/oa_edit_header_and_validation.html:3
+msgid "Open Response Assessment"
+msgstr "Εργασία αλληλοαξιολόγησης"
+
+#: templates/legacy/edit/oa_edit_peer_assessment.html:10
+msgid "Step: Peer Assessment"
+msgstr "Διαδικασία: Αλληλοαξιολόγηση"
+
+#: templates/legacy/edit/oa_edit_peer_assessment_schedule.html:10
+#: templates/legacy/edit/oa_edit_self_assessment_schedule.html:10
+msgid "Start Date"
+msgstr "Ημερομηνία Έναρξης"
+
+#: templates/legacy/edit/oa_edit_peer_assessment_schedule.html:31
+#: templates/legacy/edit/oa_edit_self_assessment_schedule.html:31
+#: templates/legacy/staff_area/oa_staff_area.html:119
+msgid "Due Date"
+msgstr "Υποβολή μέχρι"
+
+#: templates/legacy/edit/oa_edit_peer_assessment_schedule.html:40
+#: templates/legacy/edit/oa_edit_self_assessment_schedule.html:40
+msgid "Due Time"
+msgstr "Ώρα λήξης της προθεσμίας υποβολής"
+
+#: templates/legacy/edit/oa_edit_schedule.html:65
+msgid "Response Due Date"
+msgstr "Ημερομηνία λήξης της προθεσμίας υποβολής της εργασίας σας"
+
+#: templates/legacy/edit/oa_edit_schedule.html:78
+msgid "Response Due Time"
+msgstr "Ώρα λήξης της προθεσμίας υποβολής της εργασίας σας"
+
+#: templates/legacy/edit/oa_edit_self_assessment.html:8
+msgid "Step: Self Assessment"
+msgstr "Διαδικασία: Αυτοαξιολόγηση"
+
+#: templates/legacy/edit/oa_edit_staff_assessment.html:8
+msgid "Step: Staff Assessment"
+msgstr "Διαδικασία: Αξιολόγηση από μέλος της ομάδας διδασκόντων"
+
+#: templates/legacy/edit/oa_training_example_criterion.html:15
+#: templates/legacy/oa_rubric.html:43
+#: templates/legacy/student_training/student_training.html:128
+msgid "points"
+msgstr "Μονάδες"
+
+#: templates/legacy/grade/oa_grade_cancelled.html:14
+#: templates/legacy/grade/oa_grade_complete.html:15
+#: templates/legacy/grade/oa_grade_complete.html:26
+#: templates/legacy/grade/oa_grade_incomplete.html:14
+#: templates/legacy/grade/oa_grade_not_started.html:14
+#: templates/legacy/grade/oa_grade_waiting.html:14
+msgid "Your Grade"
+msgstr "Ο βαθμός σας"
+
+#: templates/legacy/grade/oa_grade_cancelled.html:19
+#, python-format
+msgid ""
+"\n"
+"                                        %(points_earned)s out of %(points_possible)s\n"
+"                                    "
+msgstr ""
+"\n"
+"%(points_earned)s από %(points_possible)s"
+
+#: templates/legacy/grade/oa_grade_complete.html:19
+#, python-format
+msgid ""
+"\n"
+"                                            %(points_earned)s out of %(points_possible)s\n"
+"                                        "
+msgstr ""
+"\n"
+"%(points_earned)s από %(points_possible)s"
+
+#: templates/legacy/grade/oa_grade_complete.html:38
+#: templates/legacy/response/oa_response.html:29
+msgid "Your Response"
+msgstr "Η εργασία σας"
+
+#: templates/legacy/grade/oa_grade_complete.html:41
+msgid "Your Upload"
+msgstr "Τα αρχεία σας"
+
+#: templates/legacy/grade/oa_grade_complete.html:46
+msgid "Assessments of Your Response"
+msgstr "Αξιολογήσεις της εργασίας σας"
+
+#: templates/legacy/grade/oa_grade_complete.html:50
+#: templates/legacy/grade/oa_grade_complete.html:132
+#: templates/legacy/grade/oa_grade_incomplete.html:28
+#: templates/legacy/grade/oa_grade_waiting.html:28
+#: templates/legacy/message/oa_message_cancelled.html:4
+#: templates/legacy/message/oa_message_closed.html:4
+#: templates/legacy/message/oa_message_complete.html:4
+#: templates/legacy/message/oa_message_incomplete.html:4
+#: templates/legacy/peer/oa_peer_closed.html:33
+#: templates/legacy/peer/oa_peer_complete.html:30
+#: templates/legacy/peer/oa_peer_turbo_mode.html:40
+#: templates/legacy/peer/oa_peer_turbo_mode_waiting.html:34
+#: templates/legacy/peer/oa_peer_waiting.html:34
+#: templates/legacy/response/oa_response_cancelled.html:31
+#: templates/legacy/response/oa_response_closed.html:29
+#: templates/legacy/response/oa_response_submitted.html:30
+#: templates/legacy/response/oa_response_team_already_submitted.html:25
+#: templates/legacy/self/oa_self_closed.html:30
+#: templates/legacy/student_training/student_training_closed.html:27
+msgid "Status"
+msgstr "Τρέχουσα κατάσταση"
+
+#: templates/legacy/grade/oa_grade_complete.html:70
+#: templates/legacy/staff_area/oa_student_info_assessment_detail.html:28
+msgid "Points"
+msgstr "Μονάδες"
+
+#: templates/legacy/grade/oa_grade_complete.html:96
+msgid "Additional comments on your response"
+msgstr "Επιπλέον σχόλια για την εργασία σας"
+
+#: templates/legacy/grade/oa_grade_complete.html:117
+msgid "Provide feedback on peer assessments"
+msgstr "Σχολιάστε τις αξιολογήσεις που λάβατε"
+
+#: templates/legacy/grade/oa_grade_complete.html:134
+msgid ""
+"Your feedback has been submitted. Course staff will be able to see this "
+"feedback when they review course records."
+msgstr ""
+"Τα σχόλιά σας έχουν υποβληθεί. Το προσωπικό θα αποκτήσει πρόσβαση σε αυτά "
+"μόλις ξεκινήσει να ελέγχει τις καταχωρήσεις του μαθήματος."
+
+#: templates/legacy/grade/oa_grade_complete.html:140
+msgid ""
+"Course staff will be able to see any feedback that you provide here when "
+"they review course records."
+msgstr ""
+"Το προσωπικό θα έχει τη δυνατότητα να δει τα σχόλια που κάνετε εδώ, όταν θα "
+"προχωρήσει στην αξιολόγηση του μαθήματος"
+
+#: templates/legacy/grade/oa_grade_complete.html:146
+msgid ""
+"Select the statements below that best reflect your experience with peer "
+"assessments."
+msgstr ""
+"Επιλέξτε από τις παρακάτω φράσεις αυτές που εκφράζουν καλύτερα την εμπειρία "
+"σας από την αλληλοαξιολόγηση. "
+
+#: templates/legacy/grade/oa_grade_complete.html:155
+msgid "These assessments were useful."
+msgstr "Οι αξιολογήσεις αυτές ήταν χρήσιμες"
+
+#: templates/legacy/grade/oa_grade_complete.html:164
+msgid "These assessments were not useful."
+msgstr "Οι αξιολογήσεις αυτές δεν ήταν χρήσιμες."
+
+#: templates/legacy/grade/oa_grade_complete.html:173
+msgid "I disagree with one or more of the peer assessments of my response."
+msgstr ""
+"Διαφωνώ με μία ή περισσότερες από τις αξιολογήσεις των συναδέλφων μου για το"
+" δοκίμιό μου"
+
+#: templates/legacy/grade/oa_grade_complete.html:182
+msgid "Some comments I received were inappropriate."
+msgstr "Κάποια από τα σχόλια που έλαβα ήταν ανάρμοστα."
+
+#: templates/legacy/grade/oa_grade_complete.html:187
+msgid ""
+"Provide feedback on the grade or comments that you received from your peers."
+msgstr "Σχολιάστε τον βαθμό ή τα σχόλια που λάβατε από τους συμφοιτητές σας."
+
+#: templates/legacy/grade/oa_grade_complete.html:190
+msgid "I feel the feedback I received was..."
+msgstr "Θεωρώ πως τα σχόλια που έλαβα ήταν..."
+
+#: templates/legacy/grade/oa_grade_complete.html:206
+msgid "Submit feedback on peer assessments"
+msgstr "Υποβάλετε τη γνώμη σας για τις αξιολογήσεις των συναδέλφων σας."
+
+#: templates/legacy/grade/oa_grade_incomplete.html:16
+msgid "Not Completed"
+msgstr "Δεν έχετε ακόμη ολοκληρώσει όλα τα απαιτούμενα βήματα"
+
+#: templates/legacy/grade/oa_grade_incomplete.html:33
+msgid "You have not completed all the steps of this problem."
+msgstr "Δεν έχετε ολοκληρώσει όλα τα βήματα της αλληλοαξιολόγησης."
+
+#: templates/legacy/grade/oa_grade_not_started.html:16
+msgid "Not Started"
+msgstr "Δεν έχετε ακόμη υποβάλει την εργασία σας"
+
+#: templates/legacy/grade/oa_grade_waiting.html:16
+msgid "Waiting for Assessments"
+msgstr "Αναμείνατε τις αξιολογήσεις σας"
+
+#: templates/legacy/grade/oa_grade_waiting.html:33
+msgid ""
+"You have completed your steps in the assignment, but some assessments still "
+"need to be done on your response. When the assessments of your response are "
+"complete, you will see feedback from everyone who assessed your response, "
+"and you will receive your final grade."
+msgstr ""
+"Έχετε ολοκληρώσει τις αξιολογήσεις των εργασιών συμφοιτητών σας, απομένουν "
+"όμως κάποιες αξιολογήσεις της δικής σας εργασίας. Όταν ολοκληρωθούν οι "
+"αξιολογήσεις της εργασίας σας, θα λάβετε γνώση για κάθε μία από αυτές και "
+"τον τελικό βαθμό σας."
+
+#: templates/legacy/instructor_dashboard/oa_listing.html:6
+msgid "Please wait"
+msgstr "Παρακαλούμε περιμένετε"
+
+#: templates/legacy/leaderboard/oa_leaderboard_show.html:20
+#, python-format
+msgid "%(num_points)s points"
+msgstr "%(num_points)s μονάδες"
+
+#: templates/legacy/leaderboard/oa_leaderboard_show.html:24
+#: templates/legacy/peer/oa_peer_assessment.html:84
+#: templates/legacy/peer/oa_peer_turbo_mode.html:53
+msgid "Your peer's response to the prompt above"
+msgstr "Η εργασία του συμφοιτητή σας στο παραπάνω θέμα"
+
+#: templates/legacy/leaderboard/oa_leaderboard_waiting.html:19
+msgid ""
+"After you complete all the steps of this assignment, you can see the top-"
+"scoring responses from your peers."
+msgstr ""
+"Θα δείτε τη βαθμολογία που λάβατε από τους συμφοιτητές σας, αφού ολοκληρώστε"
+" όλα τα βήματα της διαδικασίας αλληλοαξιολόγησης"
+
+#: templates/legacy/message/oa_message_closed.html:8
+msgid ""
+"This task is not yet available. Check back to complete the assignment once "
+"this section has opened."
+msgstr ""
+"Το βήμα αυτό δεν είναι ακόμη διαθέσιμο. Επανέλθετε για να γράψετε την "
+"εργασία σας, μόλις ανοίξει αυτό το πεδίο."
+
+#: templates/legacy/message/oa_message_closed.html:10
+msgid ""
+"This assignment has closed. One or more deadlines for this assignment have "
+"passed. You will receive an incomplete grade for this assignment."
+msgstr ""
+"Η εργασία αυτή έχει κλείσει καθώς μία ή περισσότερες από τις προθεσμίες "
+"υποβολής έχουν λήξει. Αντί βαθμού, θα λάβετε την ειδοποίηση ότι \"Η εργασία "
+"δεν ολοκληρώθηκε\"."
+
+#: templates/legacy/message/oa_message_complete.html:8
+msgid ""
+"You have completed this assignment. Your final grade will be available when "
+"the assessments of your response are complete."
+msgstr ""
+"Έχετε ολοκληρώσει την εργασία. Ο τελικός σας βαθμός θα είναι διαθέσιμος "
+"μόλις ολοκληρωθούν οι αξιολογήσεις της."
+
+#: templates/legacy/message/oa_message_complete.html:10
+msgid ""
+"You have completed this assignment. Review your grade and your assessment "
+"details."
+msgstr ""
+"Έχετε ολοκληρώσει την εργασία. Δείτε τον βαθμό σας και τις λεπτομέρειες της "
+"αξιολόγησής σας."
+
+#: templates/legacy/message/oa_message_incomplete.html:20
+#, python-format
+msgid ""
+"\n"
+"                                    %(start_strong)sThis assignment is in progress. The self assessment step will close soon.%(end_strong)s You still need to complete the %(start_link)sself assessment%(end_link)s step.\n"
+"                                "
+msgstr ""
+"\n"
+"%(start_strong)sΗ εργασία είναι σε εξέλιξη. Η διαδικασία αυτοαξιολόγησης θα λήξει σύντομα.%(end_strong)s Θα πρέπει να ολοκληρώσετε σύντομα το βήμα της %(start_link)sαυτοαξιολόγησης%(end_link)s."
+
+#: templates/legacy/message/oa_message_incomplete.html:24
+#, python-format
+msgid ""
+"\n"
+"                                    This assignment is in progress. You still need to complete the %(start_link)sself assessment%(end_link)s step.\n"
+"                                "
+msgstr ""
+"\n"
+"Η εργασία είναι σε εξέλιξη. Δεν έχετε ακόμη ολοκληρώσει το βήμα της %(start_link)sαυτοαξιολόγησης%(end_link)s"
+
+#: templates/legacy/message/oa_message_incomplete.html:38
+#, python-format
+msgid ""
+"\n"
+"                                    This assignment is in progress.%(start_strong)sThe peer assessment step will close soon.%(end_strong)s All submitted peer responses have been assessed. Check back later to see if more learners have submitted responses. You still need to complete the %(start_link)speer assessment%(end_link)s step.\n"
+"                                "
+msgstr ""
+"\n"
+"Η εργασία είναι σε εξέλιξη. %(start_strong)sΗ αλληλοαξιολόγηση θα λήξει σύντομα.%(end_strong)s Όλες οι υποβληθείσες εργασίες έχουν αξιολογηθεί. Ελέγξτε αργότερα εάν και άλλοι φοιτητές έχουν υποβάλλει τις αποκρίσεις τους, καθώς θα πρέπει να ολοκληρώσετε άμεσα και τη διαδικασία της %(start_link)sαλληλοαξιολόγησης%(end_link)s."
+
+#: templates/legacy/message/oa_message_incomplete.html:42
+#, python-format
+msgid ""
+"\n"
+"                                    This assignment is in progress. All submitted peer responses have been assessed. Check back later to see if more learners have submitted responses. You still need to complete the %(start_link)speer assessment%(end_link)s step.\n"
+"                                "
+msgstr ""
+"\n"
+"Η εργασία είναι σε εξέλιξη. Όλες οι υποβληθείσες εργασίες έχουν αξιολογηθεί. Ελέγξτε αργότερα εάν και άλλοι φοιτητές έχουν υποβάλλει τις αποκρίσεις τους, καθώς θα πρέπει να ολοκληρώσετε και τη διαδικασία της %(start_link)sαλληλοαξιολόγησης%(end_link)s."
+
+#: templates/legacy/message/oa_message_incomplete.html:46
+#, python-format
+msgid ""
+"\n"
+"                                    This assignment is in progress. %(start_strong)sThe peer assessment step will close soon.%(end_strong)s You still need to complete the %(start_link)speer assessment%(end_link)s step.\n"
+"                                "
+msgstr ""
+"\n"
+"Η εργασία είναι σε εξέλιξη. %(start_strong)sΗ αλληλοαξιολόγηση θα λήξει σύντομα.%(end_strong)s Θα πρέπει να ολοκληρώσετε άμεσα και τη διαδικασία της %(start_link)sαλληλοαξιολόγησης%(end_link)s."
+
+#: templates/legacy/message/oa_message_incomplete.html:50
+#, python-format
+msgid ""
+"\n"
+"                                    This assignment is in progress. You still need to complete the %(start_link)speer assessment%(end_link)s step.\n"
+"                                "
+msgstr ""
+"\n"
+"Η εργασία είναι σε εξέλιξη. Θα πρέπει να ολοκληρώσετε άμεσα τη διαδικασία %(start_link)sαλληλοαξιολόγησης%(end_link)s."
+
+#: templates/legacy/message/oa_message_open.html:7
+#, python-format
+msgid ""
+"\n"
+"                    Assignment submissions will close soon. To receive a grade, first provide a response to the prompt, then complete the steps below the %(start_tag)sYour Response%(end_tag)s field.\n"
+"                "
+msgstr ""
+"\n"
+"Η υποβολή των εργασιών θα λήξει σύντομα. Για να λάβετε βαθμό, θα πρέπει πρώτα να υποβάλετε την εργασία σας και στη συνέχεια να ολοκληρώσετα τα βήματα που θα δείτε κάτω από το πεδίο %(start_tag)sΗ Εργασία σας%(end_tag)s."
+
+#: templates/legacy/oa_latex_preview.html:14
+msgid "Preview Response"
+msgstr "Προεπισκόπηση εργασίας"
+
+#: templates/legacy/oa_submission_answer.html:8
+msgid "The question for this section"
+msgstr "Το θέμα της εργασίας για αυτή την ενότητα"
+
+#: templates/legacy/oa_uploaded_file.html:16
+msgid "Files that were uploaded by you:"
+msgstr "Αρχεία που έχετε ανεβάσει:"
+
+#: templates/legacy/peer/oa_peer_assessment.html:75
+#: templates/legacy/peer/oa_peer_turbo_mode.html:45
+msgid "Read and assess the following response from one of your peers."
+msgstr ""
+"Διαβάστε και αξιολογήστε την παρακάτω εργασία που έγραψε κάποιος από τους "
+"συμφοιτητές σας."
+
+#: templates/legacy/peer/oa_peer_assessment.html:101
+#: templates/legacy/peer/oa_peer_turbo_mode.html:70
+#: templates/legacy/self/oa_self_assessment.html:81
+#: templates/legacy/staff_area/oa_staff_grade_learners_assessment.html:57
+#: templates/legacy/staff_area/oa_staff_override_assessment.html:50
+msgid "We could not submit your assessment"
+msgstr "Δεν ήταν εφικτή η υποβολή της αξιολόγησή σας"
+
+#: templates/legacy/peer/oa_peer_closed.html:35
+msgid ""
+"The due date for this step has passed. This step is now closed. You can no "
+"longer complete peer assessments or continue with this assignment, and you "
+"will receive a grade of Incomplete."
+msgstr ""
+"Η προθεσμία για αυτή την διαδικασία έχει παρέλθει και το βήμα αυτό έχει "
+"κλείσει. Δεν μπορείτε πλέον να ολοκληρώσετε τις αξιολογήσεις σας για "
+"εργασίες συμφοιτητών σας. Αντί βαθμού, θα λάβετε την ειδοποίηση ότι \"Η "
+"εργασία δεν ολοκληρώθηκε\"."
+
+#: templates/legacy/peer/oa_peer_complete.html:13
+msgid "Completed"
+msgstr "Oλοκληρώθηκε"
+
+#: templates/legacy/peer/oa_peer_complete.html:31
+#: templates/legacy/peer/oa_peer_turbo_mode.html:41
+#: templates/legacy/peer/oa_peer_turbo_mode_waiting.html:36
+msgid ""
+"You have successfully completed all of the required peer assessments for "
+"this assignment. You may assess additional peer responses if you want to. "
+"Completing additional assessments will not affect your final grade."
+msgstr ""
+"Έχετε ολοκληρώσει επιτυχώς όλες τις απαιτούμενες αξιολογήσεις δοκιμίων "
+"συμφοιτητών σας. Μπορείτε αν το επιθυμείτε να συνεχίσετε να αξιολογείτε. Οι "
+"επιπλέον αυτές αξιολογήσεις δεν αυξάνουν την τελική σας βαθμολογία."
+
+#: templates/legacy/peer/oa_peer_complete.html:36
+msgid "We could not retrieve additional submissions for assessment"
+msgstr "Δεν υπάρχουν περαιτέρω εργασίες προς αξιολόγηση"
+
+#: templates/legacy/peer/oa_peer_unavailable.html:16
+#: templates/legacy/response/oa_response_unavailable.html:17
+#: templates/legacy/self/oa_self_unavailable.html:17
+#: templates/legacy/student_training/student_training_unavailable.html:16
+msgid "Not Available"
+msgstr "Δεν είναι ακόμη διαθέσιμο"
+
+#: templates/legacy/peer/oa_peer_waiting.html:20
+#, python-format
+msgid ""
+"\n"
+"          In Progress (%(review_number)s of %(num_must_grade)s)\n"
+"        "
+msgstr ""
+"\n"
+"Σε εξέλιξη (%(review_number)s από %(num_must_grade)s)"
+
+#: templates/legacy/peer/oa_peer_waiting.html:37
+msgid ""
+"All available peer responses have been assessed. Check back later to see if "
+"more learners have submitted responses. You will receive your grade after "
+"you've completed all the steps for this problem and your peers have assessed"
+" your response."
+msgstr ""
+"Έχουν αξιολογηθεί όλες οι μέχρι τώρα υποβληθείσες εργασίες. Επανέλθετε για "
+"να ελέγξετε κατά πόσο έχουν υποβάλει εργασία και άλλοι συμφοιτητές σας. Θα "
+"λάβετε το βαθμό σας αφού ολοκληρώσετε όλα τα βήματα αυτής της διαδικασίας "
+"και οι συμφοιτητές σας αξιολογήσουν την εργασία σας."
+
+#: templates/legacy/response/oa_response.html:54
+#: templates/legacy/self/oa_self_assessment.html:56
+msgid "In Progress"
+msgstr "Σε εξέλιξη"
+
+#: templates/legacy/response/oa_response.html:110
+msgid "After you submit your response, you cannot edit it"
+msgstr ""
+"Αφού υποβάλετε την εργασία σας, δεν θα μπορείτε πλέον να την επεξεργαστείτε"
+
+#: templates/legacy/response/oa_response.html:120
+msgid "What will this assignment be graded on?"
+msgstr "Ποιά είναι τα κριτήρια βαθμολόγησης της εργασίας;"
+
+#: templates/legacy/response/oa_response.html:134
+msgid "The prompt for this section"
+msgstr "Το θέμα της εργασίας"
+
+#: templates/legacy/response/oa_response.html:173
+msgid "Your Response "
+msgstr "Η εργασία σας"
+
+#: templates/legacy/response/oa_response.html:177
+#: templates/legacy/response/oa_response.html:247
+msgid "(Required)"
+msgstr "(Υποχρεωτικό πεδίο)"
+
+#: templates/legacy/response/oa_response.html:224
+msgid "We could not save your progress"
+msgstr "Δεν ήταν δυνατή η αποθήκευση της εργασίας σας"
+
+#: templates/legacy/response/oa_response.html:245
+msgid "File Uploads "
+msgstr "Αρχεία"
+
+#: templates/legacy/response/oa_response.html:261
+msgid "We could not upload files"
+msgstr "Η μεταφόρτωση του αρχείου σας δεν κατέστη δυνατή"
+
+#: templates/legacy/response/oa_response.html:280
+msgid "Supported file types: "
+msgstr "Συμβατοί τύποι αρχείων:"
+
+#: templates/legacy/response/oa_response.html:286
+msgid "Upload files"
+msgstr "Μεταφόρτωση αρχείων"
+
+#: templates/legacy/response/oa_response.html:323
+msgid "We could not submit your response"
+msgstr "Η υποβολή της εργασίας σας δεν ήταν εφικτή"
+
+#: templates/legacy/response/oa_response.html:334
+msgid "Submit your response and move to the next step"
+msgstr "Υποβάλετε την εργασία σας και προχωρήστε στο επόμενο βήμα"
+
+#: templates/legacy/response/oa_response_closed.html:19
+#: templates/legacy/self/oa_self_closed.html:20
+#: templates/legacy/student_training/student_training_closed.html:17
+msgid "Incomplete"
+msgstr "Ανολοκλήρωτο"
+
+#: templates/legacy/response/oa_response_closed.html:32
+msgid ""
+"The due date for this step has passed. This step is now closed. You can no "
+"longer submit a response or continue with this problem, and you will receive"
+" a grade of Incomplete. If you saved but did not submit a response, the "
+"response appears in the course records."
+msgstr ""
+"Η προθεσμία ολοκλήρωσης αυτού του βήματος έχει παρέλθει. Δεν μπορείτε στο "
+"εξής να υποβάλετε την εργασίας σας ή να συνεχίσετε να την επεξεργάζεστε. Ο "
+"βαθμός που θα λάβετε για την εργασία σας είναι \"Ανολοκλήρωτο\". Εάν "
+"αποθηκεύσατε αλλά δεν υποβάλατε την εργασία σας, αυτή θα εμφανίζεται απλώς "
+"στο αρχείο του μαθήματος."
+
+#: templates/legacy/response/oa_response_graded.html:30
+#: templates/legacy/response/oa_response_submitted.html:51
+#: templates/legacy/self/oa_self_assessment.html:67
+msgid "Your response"
+msgstr "Η απάντησή σας στο θέμα της εργασίας"
+
+#: templates/legacy/response/oa_response_submitted.html:32
+msgid ""
+"Your response has been submitted. You will receive your grade after all "
+"steps are complete and your response is fully assessed."
+msgstr ""
+" Η εργασία σας έχει υποβληθεί. Θα λάβετε το βαθμό σας αφού ολοκληρώσετε όλες"
+" τις απαιτούμενες διαδικασίες και η εργασία σας αξιολογηθεί επίσης από τον "
+"απαιτούμενο αριθμό συμφοιτητών σας."
+
+#: templates/legacy/response/oa_response_submitted.html:34
+#, python-format
+msgid ""
+"\n"
+"                        You still need to complete the %(peer_start_tag)speer assessment%(end_tag)s and %(self_start_tag)sself assessment%(end_tag)s steps.\n"
+"                    "
+msgstr ""
+"\n"
+"Θα πρέπει να ολοκληρώσετε τις διαδικασίες %(peer_start_tag)sαλληλοαξιολόγησης%(end_tag)s και%(self_start_tag)sαυτοαξιολόγησης%(end_tag)s."
+
+#: templates/legacy/response/oa_response_submitted.html:38
+#, python-format
+msgid ""
+"\n"
+"                        You still need to complete the %(start_tag)speer assessment%(end_tag)s step.\n"
+"                    "
+msgstr ""
+"\n"
+"Θα πρέπει να ολοκληρώσετε τη διαδικασία %(start_tag)sαλληλοαξιολόγησης%(end_tag)s step."
+
+#: templates/legacy/response/oa_response_submitted.html:42
+#, python-format
+msgid ""
+"\n"
+"                        You still need to complete the %(start_tag)sself assessment%(end_tag)s step.\n"
+"                    "
+msgstr ""
+"\n"
+"Θα πρέπει να ολοκληρώστε τη διαδικασία  %(start_tag)sαυτοαξιολόγησής σας%(end_tag)s."
+
+#: templates/legacy/self/oa_self_assessment.html:33
+msgid "Assess Your Response"
+msgstr "Αξιολογήστε την εργασία σας"
+
+#: templates/legacy/self/oa_self_assessment.html:88
+msgid "Submit your assessment"
+msgstr "Υποβάλετε την αξιολόγησή σας"
+
+#: templates/legacy/self/oa_self_closed.html:32
+msgid ""
+"The due date for this step has passed. This step is now closed. You can no "
+"longer complete a self assessment or continue with this assignment, and you "
+"will receive a grade of Incomplete."
+msgstr ""
+"Η προθεσμία για αυτή την διαδικασία έχει παρέλθει και το βήμα αυτό έχει "
+"κλείσει. Δεν μπορείτε πλέον να ολοκληρώσετε την αυτοαξιολόγησή σας ή να "
+"συνεχίσετε με την εργασία σας. Αντί βαθμού, θα λάβετε την ειδοποίηση ότι \"Η"
+" εργασία δεν ολοκληρώθηκε\"."
+
+#: templates/legacy/staff/oa_staff_grade.html:13 xblock/grade_mixin.py:369
+msgid "Staff Grade"
+msgstr "Βαθμός Διδάσκοντα"
+
+#: templates/legacy/staff_area/oa_staff_area.html:31
+#: templates/legacy/staff_area/oa_staff_area.html:69
+#: templates/legacy/staff_area/oa_staff_area.html:151
+msgid "Close"
+msgstr "Κλείσιμο"
+
+#: templates/legacy/staff_area/oa_staff_area.html:56
+msgid "Submit"
+msgstr "Υποβολή"
+
+#: templates/legacy/staff_area/oa_staff_grade_learners.html:7
+msgid "Staff Assessment"
+msgstr "Αξιολόγηση από μέλος της ομάδας διδασκόντων"
+
+#: templates/legacy/staff_area/oa_staff_grade_learners_assessment.html:64
+#: templates/legacy/staff_area/oa_staff_override_assessment.html:57
+msgid "Submit assessment"
+msgstr "Υποβολή αξιολόγησης"
+
+#: templates/legacy/staff_area/oa_staff_grade_learners_assessment.html:70
+msgid "Submit assessment and continue grading"
+msgstr "Υποβάλετε την αξιολόγησή σας και συνεχίστε να βαθμολογείτε"
+
+#: templates/legacy/staff_area/oa_staff_grade_learners_count.html:6
+#, python-format
+msgid ""
+"\n"
+"                %(ungraded)s Available and %(in_progress)s Checked Out\n"
+"            "
+msgstr ""
+"\n"
+"%(ungraded)s Διαθέσιμα και %(in_progress)s Διορθωμένα"
+
+#: templates/legacy/staff_area/oa_student_info.html:71
+msgid "Peer Assessments for This Learner"
+msgstr "Αξιολογήσεις που υποβλήθησαν για αυτόν τον Φοιτητή"
+
+#: templates/legacy/staff_area/oa_student_info.html:76
+msgid "Peer Assessments Completed by This Learner"
+msgstr "Αλληλοαξιολογήσεις που συμπληρώθηκαν από αυτόν τον Φοιτητή"
+
+#: templates/legacy/staff_area/oa_student_info.html:81
+msgid "Learner's Self Assessment"
+msgstr "Αυτοαξιολόγηση του Φοιτητή"
+
+#: templates/legacy/staff_area/oa_student_info.html:87
+msgid "Staff Assessment for This Learner"
+msgstr "Αξιολόγηση από μέλος της ομάδας διδασκόντων για αυτόν τον Φοιτητή"
+
+#: templates/legacy/staff_area/oa_student_info.html:112
+#, python-format
+msgid ""
+"\n"
+"                            Final grade: %(points_earned)s out of %(points_possible)s\n"
+"                        "
+msgstr ""
+"\n"
+"Τελικός βαθμός:  %(points_earned)s από %(points_possible)s"
+
+#: templates/legacy/staff_area/oa_student_info.html:165
+msgid "The submission is waiting for assessments."
+msgstr "Αναμένονται αξιολογήσεις για αυτή την εργασία"
+
+#: templates/legacy/staff_area/oa_student_info.html:177
+msgid "The problem has not been started."
+msgstr "Η εργασία αλληλοαξιολόγησης δεν έχει ακόμη ξεκινήσει"
+
+#: templates/legacy/staff_area/oa_student_info.html:181
+msgid "The problem has not been completed."
+msgstr "Οι απαιτούμενες διαδικασίες δεν έχουν ακόμη ολοκληρωθεί."
+
+#: templates/legacy/staff_area/oa_student_info_assessment_detail.html:16
+#, python-format
+msgid ""
+"\n"
+"                            Assessment %(assessment_num)s:\n"
+"                        "
+msgstr ""
+"\n"
+"Αξιολόγηση %(assessment_num)s:"
+
+#: templates/legacy/staff_area/oa_student_info_assessment_detail.html:22
+msgid "Assessment Details"
+msgstr "Λεπτομέρειες Αξιολόγησης"
+
+#: templates/legacy/staff_area/oa_student_info_assessment_detail.html:29
+msgid "Points Possible"
+msgstr "Μονάδες"
+
+#: templates/legacy/student_training/student_training.html:18
+msgid "Learn to Assess Responses"
+msgstr "Εξασκηθείτε στην αξιολόγηση εργασιών"
+
+#: templates/legacy/student_training/student_training.html:58
+#: templates/legacy/student_training/student_training.html:66
+msgid "Learning to Assess Responses"
+msgstr "Εξασκηθείτε στην αξιολόγηση εργασιών"
+
+#: templates/legacy/student_training/student_training.html:61
+msgid ""
+"Before you begin to assess your peers' responses, you'll learn how to "
+"complete peer assessments by reviewing responses that instructors have "
+"already assessed. If you select the same options for the response that the "
+"instructor selected, you'll move to the next step. If you don't select the "
+"same options, you'll review the response and try again."
+msgstr ""
+"Προτού ξεκινήσετε να αξιολογείτε τις εργασίες των συμφοιτητών σας, θα "
+"εξασκηθείτε βλέποντας μια εργασία που έχει ήδη αξιολογήσει ο διδάσκων. Εάν "
+"οι αξιολογήσεις σας συμπίπτουν με αυτές του διδάσκοντα, θα μπορέσετε να "
+"προχωρήσετε στο επόμενο βήμα. Εάν όχι, θα δείτε και πάλι την εργασία και θα "
+"πρέπει να προσπαθήσετε ξανά."
+
+#: templates/legacy/student_training/student_training.html:69
+msgid ""
+"Your assessment differs from the instructor's assessment of this response. "
+"Review the response and consider why the instructor may have assessed it "
+"differently. Then, try the assessment again."
+msgstr ""
+"Η αξιολόγησή σας διαφέρει από την αξιολόγηση του διδάσκοντα για αυτή την "
+"εργασία. Δείτε και πάλι την εργασία και σκεφθείτε για ποιο λόγο ο διδάσκων "
+"μπορεί να την αξιολόγησε διαφορετικά. Στη συνέχεια επιχειρήστε να την "
+"αξιολογήσετε ξανά."
+
+#: templates/legacy/student_training/student_training.html:76
+msgid "The response to the prompt above:"
+msgstr "Η υποθετική απάντηση που δόθηκε στο παραπάνω θέμα είναι:"
+
+#: templates/legacy/student_training/student_training.html:98
+msgid "Selected Options Agree"
+msgstr "Η επιλογή σας συμπίπτει με αυτή του διδάσκοντα"
+
+#: templates/legacy/student_training/student_training.html:101
+msgid "The option you selected is the option that the instructor selected."
+msgstr "Η επιλογή σας ταυτίζεται με αυτή του διδάσκοντα"
+
+#: templates/legacy/student_training/student_training.html:105
+msgid "Selected Options Differ"
+msgstr "Η επιλογή σας διαφέρει από αυτή του διδάσκοντα"
+
+#: templates/legacy/student_training/student_training.html:108
+msgid ""
+"The option you selected is not the option that the instructor selected."
+msgstr "Η επιλογή σας δεν είναι η ίδια με αυτή που όρισε ο διδάσκοντας"
+
+#: templates/legacy/student_training/student_training.html:151
+msgid "Compare your selections with the instructor's selections"
+msgstr "Συγκρίνετε την αξιολόγησή σας με αυτή του διδάσκοντα"
+
+#: templates/legacy/student_training/student_training_closed.html:29
+msgid ""
+"The due date for this step has passed. This step is now closed. You can no "
+"longer continue with this assignment, and you will receive a grade of "
+"Incomplete."
+msgstr ""
+"Η προθεσμία για αυτή την διαδικασία έχει παρέλθει και το βήμα αυτό έχει "
+"κλείσει. Δεν μπορείτε πλέον να ολοκληρώσετε την εργασία σας. Αντί βαθμού, θα"
+" λάβετε την ειδοποίηση ότι \"Η εργασία δεν ολοκληρώθηκε\"."
+
+#: xblock/grade_mixin.py:78 xblock/leaderboard_mixin.py:61
+msgid "An unexpected error occurred."
+msgstr "Προέκυψε ένα μη αναμενόμενο σφάλμα"
+
+#: xblock/grade_mixin.py:180
+msgid "Peer Assessment"
+msgstr "Αλληλοαξιολόγηση"
+
+#: xblock/grade_mixin.py:182
+msgid "Self Assessment"
+msgstr "Αυτοαξιολόγηση"
+
+#: xblock/grade_mixin.py:222
+msgid "Assessment feedback could not be saved."
+msgstr "Δεν μπόρεσαν να αποθηκευτούν τα σχόλια για την αξιολόγηση"
+
+#: xblock/grade_mixin.py:383 xblock/grade_mixin.py:542
+#, python-brace-format
+msgid "Peer {peer_index}"
+msgstr "Συμφοιτητής {peer_index}"
+
+#: xblock/grade_mixin.py:384
+msgid "Peer Comments"
+msgstr "Σχόλια του συμφοιτητή σας"
+
+#: xblock/grade_mixin.py:394
+msgid "Self Assessment Grade"
+msgstr "Βαθμός Αυτοαξιολόγησης"
+
+#: xblock/grade_mixin.py:394
+msgid "Your Self Assessment"
+msgstr "Η Αυτοαξιολόγησή σας"
+
+#: xblock/grade_mixin.py:430
+msgid "Peer Median Grade"
+msgstr "ΔΙΑΜΕΣΟΣ ΤΩΝ ΒΑΘΜΩΝ ΠΟΥ ΛΑΒΑΤΕ ΑΠΟ ΤΟΥΣ ΣΥΜΦΟΙΤΗΤΕΣ ΣΑΣ"
+
+#: xblock/grade_mixin.py:508
+msgid "Waiting for peer reviews"
+msgstr "Αναμείνατε την αξιολόγηση των συμφοιτητών σας"
+
+#: xblock/grade_mixin.py:677
+msgid "The grade for this problem is determined by your Staff Grade."
+msgstr "Η άσκηση αυτή βαθμολογείται από το Διδακτικό Προσωπικό."
+
+#: xblock/staff_area_mixin.py:385
+msgid "No other learner responses are available for grading at this time."
+msgstr ""
+"Δεν υπάρχουν αυτή τη στιγμή άλλες εργασίες συμφοιτητών σας διαθέσιμες προς "
+"αξιολόγηση"
+
+#: xblock/utils/validation.py:230
+msgid "The number of criteria cannot be changed after a problem is released."
+msgstr ""
+"Ο αριθμός των κριτηρίων δεν μπορεί να αλλάξει εφόσον ένα πρόβλημα "
+"δημοσιευθεί."
+
+#: xblock/utils/validation.py:243
+msgid "Criteria names cannot be changed after a problem is released"
+msgstr ""
+"Τα ονόματα των κριτηρίων δεν μπορούν να αλλάξουν εφόσον ένα πρόβλημα "
+"δημοσιευθεί."
+
+#: xblock/utils/validation.py:248
+msgid "The number of options cannot be changed after a problem is released."
+msgstr ""
+"Ο αριθμός των επιλογών δε μπορεί να αλλάξει εφόσον ένα πρόβλημα δημοσιευθεί."

@@ -1,0 +1,831 @@
+# edX translation file.
+# Copyright (C) 2025 EdX
+# This file is distributed under the GNU AFFERO GENERAL PUBLIC LICENSE.
+# EdX Team <info@edx.org>, 2025.
+# 
+# Translators:
+# Brian Smith, 2025
+# Ali Işıngör <ali@artistanbul.io>, 2026
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.1a\n"
+"Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
+"POT-Creation-Date: 2023-06-13 08:00+0000\n"
+"PO-Revision-Date: 2025-11-17 07:23+0000\n"
+"Last-Translator: Ali Işıngör <ali@artistanbul.io>, 2026\n"
+"Language-Team: Turkish (Turkey) (https://app.transifex.com/open-edx/teams/6205/tr_TR/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: tr_TR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: lti_1p3/extensions/rest_framework/authentication.py:41
+msgid "Missing LTI 1.3 authentication token."
+msgstr "LTI 1.3 kimlik doğrulama jetonu eksik."
+
+#: lti_1p3/extensions/rest_framework/authentication.py:45
+msgid "Invalid token header. No credentials provided."
+msgstr "Geçersiz jeton başlığı. Hiçbir kimlik bilgisi sağlanmadı."
+
+#: lti_1p3/extensions/rest_framework/authentication.py:49
+msgid "Invalid token header. Token string should not contain spaces."
+msgstr "Geçersiz jeton başlığı. Belirteç dizesi boşluk içermemelidir."
+
+#: lti_1p3/extensions/rest_framework/authentication.py:57
+msgid "LTI configuration not found."
+msgstr "LTI yapılandırması bulunamadı."
+
+#: lti_1p3/extensions/rest_framework/authentication.py:66
+msgid "Invalid token signature."
+msgstr "Geçersiz jeton imzası."
+
+#: lti_xblock.py:134
+msgid "No valid user id found in endpoint URL"
+msgstr "Uç nokta URL adresinde geçerli bir kullanıcı kimliği bulunamadı"
+
+#: lti_xblock.py:147
+msgid "Configuration on block"
+msgstr "Blockta yapılandırma"
+
+#: lti_xblock.py:151
+msgid "Database Configuration"
+msgstr "Veritabanı Yapılandırması"
+
+#: lti_xblock.py:154
+msgid "Reusable Configuration"
+msgstr "Yeniden Kullanılabilir Yapılandırma"
+
+#: lti_xblock.py:262
+msgid "Display Name"
+msgstr "Görünen Ad"
+
+#: lti_xblock.py:264
+msgid ""
+"Enter the name that students see for this component. Analytics reports may "
+"also use the display name to identify this component."
+msgstr ""
+"Öğrencilerin bu bileşen için göreceği adı girin. Analytics raporları, bu "
+"bileşeni tanımlamak için görünen adı da kullanabilir."
+
+#: lti_xblock.py:268
+msgid "LTI Consumer"
+msgstr "LTI Tüketicisi"
+
+#: lti_xblock.py:271
+msgid "LTI Application Information"
+msgstr "LTI Uygulama Bilgisi"
+
+#: lti_xblock.py:273
+msgid ""
+"Enter a description of the third party application. If requesting username "
+"and/or email, use this text box to inform users why their username and/or "
+"email will be forwarded to a third party application."
+msgstr ""
+"Üçüncü parti uygulamanın açıklamasını girin. Eğer kullanıcı adı ve/veya "
+"e-posta adresi talep ediliyorsa bu metin kutusuna kullanıcıların neden "
+"üçüncü parti uygulamaya kullanıcı adlarının ve/veya e-postalarının "
+"gönderileceğine ilişkin açıklama yazın."
+
+#: lti_xblock.py:281
+msgid "Configuration Type"
+msgstr "Yapılandırma Türü"
+
+#: lti_xblock.py:286
+msgid ""
+"Select 'Configuration on block' to configure a new LTI Tool. If the support "
+"staff provided you with a pre-configured LTI reusable Tool ID, "
+"select'Reusable Configuration' and enter it in the text field below."
+msgstr ""
+"Yeni bir LTI Aracı yapılandırmak için &#39;Bloktaki yapılandırma&#39;yı "
+"seçin. Destek personeli size önceden yapılandırılmış bir LTI yeniden "
+"kullanılabilir Araç Kimliği sağladıysa, &#39;Yeniden Kullanılabilir "
+"Yapılandırma&#39;yı seçin ve bunu aşağıdaki metin alanına girin."
+
+#: lti_xblock.py:293
+msgid "LTI Version"
+msgstr "LTI Sürümü"
+
+#: lti_xblock.py:301
+msgid ""
+"Select the LTI version that your tool supports.<br />The XBlock LTI Consumer"
+" fully supports LTI 1.1.1, LTI 1.3 and LTI Advantage features."
+msgstr ""
+"Aracınızın desteklediği LTI sürümünü seçin.<br /> XBlock LTI Consumer, LTI "
+"1.1.1, LTI 1.3 ve LTI Advantage özelliklerini tam olarak destekler."
+
+#: lti_xblock.py:308
+msgid "LTI Reusable Configuration ID"
+msgstr "LTI Yeniden Kullanılabilir Yapılandırma Kimliği"
+
+#: lti_xblock.py:310
+msgid ""
+"Enter the reusable LTI external configuration ID provided by the support "
+"staff."
+msgstr ""
+"Destek personeli tarafından sağlanan yeniden kullanılabilir LTI harici "
+"yapılandırma kimliğini girin."
+
+#: lti_xblock.py:315
+msgid "Tool Launch URL"
+msgstr "Araç Başlatma URL adresi"
+
+#: lti_xblock.py:319
+msgid ""
+"Enter the LTI 1.3 Tool Launch URL. <br />This is the URL the LMS will use to"
+" launch the LTI Tool."
+msgstr ""
+"LTI 1.3 Araç Başlatma URL adresini girin.<br /> Bu, LMS'in LTI Aracını "
+"başlatmak için kullanacağı URL adresidir."
+
+#: lti_xblock.py:324
+msgid "Tool Initiate Login URL"
+msgstr "Giriş URL adresi başlatma aracı"
+
+#: lti_xblock.py:328
+msgid ""
+"Enter the LTI 1.3 Tool OIDC Authorization url (can also be called login or "
+"login initiation URL).<br />This is the URL the LMS will use to start a LTI "
+"authorization prior to doing the launch request."
+msgstr ""
+"LTI 1.3 Aracı OIDC Yetkilendirme URL adresini girin (oturum açma veya oturum"
+" açma başlatma URL adresi olarak da adlandırılabilir).<br /> Bu, LMS'in "
+"başlatma isteğini gerçekleştirmeden önce LTI yetkilendirmesini başlatmak "
+"için kullanacağı URL adresidir."
+
+#: lti_xblock.py:334
+msgid "Registered Redirect URIs"
+msgstr "Kayıtlı Yönlendirme URL adresleri"
+
+#: lti_xblock.py:336
+msgid ""
+"Valid urls the Tool may request us to redirect the id token to. The redirect"
+" uris are often the same as the launch url/deep linking url so if this field"
+" is empty, it will use them as the default. If you need to use different "
+"redirect uri's, enter them here. If you use this field you must enter all "
+"valid redirect uri's the tool may request."
+msgstr ""
+"Aracın kimlik jetonunu yönlendirmemizi isteyebileceği geçerli URL adresleri."
+" Yönlendirme URL adresleri genellikle başlatma URL/deep linking URL adresi "
+"ile aynıdır; bu alan boş bırakılırsa varsayılan olarak bunlar kullanılır. "
+"Farklı yönlendirme URL adresleri kullanmanız gerekiyorsa, bunları buraya "
+"girin. Bu alanı kullanırsanız, aracın talep edebileceği tüm geçerli "
+"yönlendirme URL adreslerini eksiksiz olarak girmelisiniz."
+
+#: lti_xblock.py:346
+msgid "Tool Public Key Mode"
+msgstr "Araç Genel Anahtar Modu"
+
+#: lti_xblock.py:354
+msgid "Select how the tool's public key information will be specified."
+msgstr "Aracın genel anahtar bilgilerinin nasıl belirtileceğini seçin."
+
+#: lti_xblock.py:358
+msgid "Tool Keyset URL"
+msgstr "Araç Anahtar Seti URL adresi"
+
+#: lti_xblock.py:362
+msgid ""
+"Enter the LTI 1.3 Tool's JWK keysets URL.<br />This link should retrieve a "
+"JSON file containing public keys and signature algorithm information, so "
+"that the LMS can check if the messages and launch requests received have the"
+" signature from the tool.<br /><b>This is not required when doing LTI 1.3 "
+"Launches without LTI Advantage nor Basic Outcomes requests.</b>"
+msgstr ""
+"ELTI 1.3 Aracının JWK anahtar setleri URL adresini girin.<br />Bu bağlantı, "
+"LMS’in alınan mesajlar ve başlatma taleplerinin araç tarafından imzalanıp "
+"imzalanmadığını doğrulayabilmesi için genel anahtarlar ve imza algoritması "
+"bilgilerini içeren bir JSON dosyası döndürmelidir.<br /><b>Bu, LTI Advantage"
+" kullanılmayan LTI 1.3 Başlatma işlemlerinde veya Basic Outcomes "
+"taleplerinde gerekli değildir.</b>"
+
+#: lti_xblock.py:372
+msgid "Tool Public Key"
+msgstr "Araç Genel Anahtarı"
+
+#: lti_xblock.py:377
+msgid ""
+"Enter the LTI 1.3 Tool's public key.<br />This is a string that starts with "
+"'-----BEGIN PUBLIC KEY-----' and is required so that the LMS can check if "
+"the messages and launch requests received have the signature from the "
+"tool.<br /><b>This is not required when doing LTI 1.3 Launches without LTI "
+"Advantage nor Basic Outcomes requests.</b>"
+msgstr ""
+"LTI 1.3 Aracının genel anahtarını girin.<br /> Bu, -----BEGIN PUBLIC "
+"KEY----- ile başlayan bir dizgedir ve LMS'in alınan mesajların ve başlatma "
+"isteklerinin araçtan imza alıp almadığını kontrol edebilmesi için "
+"gereklidir.<br /> <b>LTI Advantage veya Basic Outcomes talepleri olmadan LTI"
+" 1.3 Başlatmaları yapılırken bu gerekli değildir.</b>"
+
+#: lti_xblock.py:387
+msgid "Enable LTI NRPS"
+msgstr "LTI NRPS etkinleştir"
+
+#: lti_xblock.py:388
+msgid "Enable LTI Names and Role Provisioning Services."
+msgstr "LTI Adlar ve Rol Sağlama Hizmetlerini etkinleştirin."
+
+#: lti_xblock.py:395
+msgid "Deep linking"
+msgstr "Derin bağlantılama"
+
+#: lti_xblock.py:396
+msgid "Select True if you want to enable LTI Advantage Deep Linking."
+msgstr ""
+"LTI Advantage Derin Bağlantıları etkinleştirmek istiyorsanız, True "
+"seçeneğini seçin."
+
+#: lti_xblock.py:401
+msgid "Deep Linking Launch URL"
+msgstr "Derin Bağlantı Başlatma URL adresi"
+
+#: lti_xblock.py:405
+msgid ""
+"Enter the LTI Advantage Deep Linking Launch URL. If the tool does not "
+"specify one, use the same value as 'Tool Launch URL'."
+msgstr ""
+"LTI Advantage Derin Bağlantı Başlatma URL adresini girin. Araç bir tane "
+"belirtmezse, Araç Başlatma URL adresiyle aynı değeri kullanın."
+
+#: lti_xblock.py:410
+msgid "LTI Assignment and Grades Service"
+msgstr "LTI Ödev ve Not Hizmeti"
+
+#: lti_xblock.py:412
+msgid "Disabled"
+msgstr "Devre dışı"
+
+#: lti_xblock.py:413
+msgid "Allow tools to submit grades only (declarative)"
+msgstr "Araçların yalnızca not göndermesine izin ver (bildirimsel)"
+
+#: lti_xblock.py:414
+msgid "Allow tools to manage and submit grade (programmatic)"
+msgstr "Araçların notu yönetmesine ve göndermesine izin ver (programatik)"
+
+#: lti_xblock.py:419
+msgid ""
+"Enable the LTI-AGS service and select the functionality enabled for LTI "
+"tools. The 'declarative' mode (default) will provide a tool with a LineItem "
+"created from the XBlock settings, while the 'programmatic' one will allow "
+"tools to manage, create and link the grades."
+msgstr ""
+"LTI-AGS hizmetini etkinleştirin ve LTI araçları için etkinleştirilen "
+"işlevselliği seçin. Bildirimsel mod (varsayılan), XBlock ayarlarından "
+"oluşturulan bir LineItem içeren bir araç sağlarken; programatik mod, "
+"araçların notları yönetmesine, oluşturmasına ve bağlantılandırılmasına "
+"olanak tanır."
+
+#: lti_xblock.py:427
+msgid "LTI ID"
+msgstr "LTI Kimliği"
+
+#: lti_xblock.py:429
+#, python-brace-format
+msgid ""
+"Enter the LTI ID for the external LTI provider. This value must be the same "
+"LTI ID that you entered in the LTI Passports setting on the Advanced "
+"Settings page.<br />See the {docs_anchor_open}edX LTI "
+"documentation{anchor_close} for more details on this setting."
+msgstr ""
+"Harici LTI sağlayıcısının LTI kimliğini girin. Bu değer, Gelişmiş Ayarlar "
+"sayfasındaki LTI Pasaportları ayarına girdiğiniz LTI kimliğiyle aynı "
+"olmalıdır.<br /> Bu ayar hakkında daha fazla ayrıntı için {docs_anchor_open}"
+" edX LTI belgelerine {anchor_close} bakın."
+
+#: lti_xblock.py:441
+msgid "LTI URL"
+msgstr "LTI URL"
+
+#: lti_xblock.py:443
+#, python-brace-format
+msgid ""
+"Enter the URL of the external tool that this component launches. This "
+"setting is only used when Hide External Tool is set to False.<br />See the "
+"{docs_anchor_open}edX LTI documentation{anchor_close} for more details on "
+"this setting."
+msgstr ""
+"Bu bileşenin başlattığı harici aracın URL adresini girin. Bu ayar yalnızca "
+"Harici Aracı Gizle değeri False olarak ayarlandığında kullanılır.<br /> Bu "
+"ayarla ilgili daha fazla ayrıntı için {docs_anchor_open} edX LTI "
+"belgelendirmesine {anchor_close} bakın."
+
+#: lti_xblock.py:456
+msgid "Custom Parameters"
+msgstr "Özel Parametreler"
+
+#: lti_xblock.py:458
+#, python-brace-format
+msgid ""
+"Add the key/value pair for any custom parameters, such as the page your "
+"e-book should open to or the background color for this component. Ex. "
+"[\"page=1\", \"color=white\"]<br />See the {docs_anchor_open}edX LTI "
+"documentation{anchor_close} for more details on this setting."
+msgstr ""
+"E-kitabınızın açılması gereken sayfa veya bu bileşenin arka plan rengi gibi "
+"özel parametreler için anahtar/değer çiftini ekleyin. Örn. [\"page=1\", "
+"\"color=white\"]<br /> Bu ayarla ilgili daha fazla ayrıntı için "
+"{docs_anchor_open}edX LTI belgelendirmesine{anchor_close} bakın."
+
+#: lti_xblock.py:468
+msgid "LTI Launch Target"
+msgstr "LTI Başlatma Hedefi"
+
+#: lti_xblock.py:470
+msgid ""
+"Select Inline if you want the LTI content to open in an IFrame in the "
+"current page. Select Modal if you want the LTI content to open in a modal "
+"window in the current page. Select New Window if you want the LTI content to"
+" open in a new browser window. This setting is only used when Hide External "
+"Tool is set to False."
+msgstr ""
+"LTI içeriğinin geçerli sayfada bir IFrame içinde açılmasını istiyorsanız "
+"Satır İçi seçeneğini seçin. LTI içeriğinin geçerli sayfada kalıcı bir "
+"pencerede açılmasını istiyorsanız Modalı seçin. LTI içeriğinin yeni bir "
+"tarayıcı penceresinde açılmasını istiyorsanız Yeni Pencereyi seçin. Bu ayar "
+"yalnızca Harici Aracı Gizle ayarı False olarak belirlendiğinde kullanılır."
+
+#: lti_xblock.py:484
+msgid "Button Text"
+msgstr "Düğme Metni"
+
+#: lti_xblock.py:486
+msgid ""
+"Enter the text on the button used to launch the third party application. "
+"This setting is only used when Hide External Tool is set to False and LTI "
+"Launch Target is set to Modal or New Window."
+msgstr ""
+"Üçüncü taraf uygulamasını başlatmak için kullanılan düğmedeki metni girin. "
+"Bu ayar yalnızca Harici Aracı Gizle seçeneği False olarak ayarlandığında ve "
+"LTI Başlatma Hedefi Modal veya Yeni Pencere olarak ayarlandığında "
+"kullanılır."
+
+#: lti_xblock.py:494
+msgid "Inline Height"
+msgstr "Satır İçi Yükseklik"
+
+#: lti_xblock.py:496
+msgid ""
+"Enter the desired pixel height of the iframe which will contain the LTI "
+"tool. This setting is only used when Hide External Tool is set to False and "
+"LTI Launch Target is set to Inline."
+msgstr ""
+"LTI aracını içerecek iframe için istenen piksel yüksekliğini girin. Bu ayar "
+"yalnızca Harici Aracı Gizle ayarı False olarak belirlendiğinde ve LTI "
+"Başlatma Hedefi Satır İçi olarak ayarlandığında kullanılır."
+
+#: lti_xblock.py:504
+msgid "Modal Height"
+msgstr "Modal Yüksekliği"
+
+#: lti_xblock.py:506
+msgid ""
+"Enter the desired viewport percentage height of the modal overlay which will"
+" contain the LTI tool. This setting is only used when Hide External Tool is "
+"set to False and LTI Launch Target is set to Modal."
+msgstr ""
+"LTI aracını içerecek kalıcı kaplamanın istenen görünüm yüzdesi yüksekliğini "
+"girin. Bu ayar yalnızca Harici Aracı Gizle False olarak ayarlandığında ve "
+"LTI Başlatma Hedefi Modal olarak ayarlandığında kullanılır."
+
+#: lti_xblock.py:514
+msgid "Modal Width"
+msgstr "Modal Genişliği"
+
+#: lti_xblock.py:516
+msgid ""
+"Enter the desired viewport percentage width of the modal overlay which will "
+"contain the LTI tool. This setting is only used when Hide External Tool is "
+"set to False and LTI Launch Target is set to Modal."
+msgstr ""
+"LTI aracını içerecek modal kaplamanın, görüntü alanına göre yüzde cinsinden genişliğini girin.\n"
+"Bu ayar yalnızca Harici Aracı Gizle seçeneği False olarak ayarlandığında ve LTI Başlatma Hedefi Modal olarak seçildiğinde kullanılır."
+
+#: lti_xblock.py:524
+msgid "Scored"
+msgstr "Puanlandı"
+
+#: lti_xblock.py:525
+msgid ""
+"Select True if this component will receive a numerical score from the "
+"external LTI system."
+msgstr ""
+"Bu bileşen harici LTI sisteminden rakamsal bir skor alacaksa True olarak "
+"işaretleyin. "
+
+#: lti_xblock.py:532
+msgid ""
+"Enter the number of points possible for this component.  The default value "
+"is 1.0.  This setting is only used when Scored is set to True."
+msgstr ""
+"Bu bileşen için muhtemel puan sayısını girin. Varsayılan değer 1.0. Bu ayar "
+"sadece Puanlandı değeri True olarak ayarlandıysa kullanılır."
+
+#: lti_xblock.py:541
+msgid ""
+"The score kept in the xblock KVS -- duplicate of the published score in "
+"django DB"
+msgstr ""
+"Puan xblock KVS'de tutuldu -- django DB'deki yayınlanan puanın kopyası"
+
+#: lti_xblock.py:546
+msgid "Comment as returned from grader, LTI2.0 spec"
+msgstr "Derecelendirenden döndüğü gibi yorum, LTI2.0 spec"
+
+#: lti_xblock.py:551
+msgid "Hide External Tool"
+msgstr "Harici Aracı Gizle"
+
+#: lti_xblock.py:553
+msgid ""
+"Select True if you want to use this component as a placeholder for syncing "
+"with an external grading  system rather than launch an external tool.  This "
+"setting hides the Launch button and any IFrames for this component."
+msgstr ""
+"Harici bir aracı başlatmak yerine, harici bir notlandırma sistemiyle "
+"senkronizasyon için bu bileşeni bir yer tutucu (placeholder) olarak "
+"kullanmak istiyorsanız, True seçeneğini seçin. Bu ayar Başlat düğmesini ve "
+"bu bileşen için olan IFrames'i gizler."
+
+#: lti_xblock.py:561
+msgid "Accept grades past deadline"
+msgstr "Son tarihi geçmiş notları kabul et"
+
+#: lti_xblock.py:562
+msgid ""
+"Select True to allow third party systems to post grades past the deadline."
+msgstr ""
+"Bitiş tarihi geçmiş notlarını göndermek için üçüncü parti sistemlere izin "
+"vermek için True'yu seçin."
+
+#: lti_xblock.py:570
+msgid "Request user's username"
+msgstr "Kullanıcının kullanıcı adını iste"
+
+#. Translators: This is used to request the user's username for a third party
+#. service.
+#: lti_xblock.py:572
+msgid "Select True to request the user's username."
+msgstr "Kullanıcının kullanıcı adını istemek için True'yu seçin."
+
+#: lti_xblock.py:577
+msgid "Request user's full name"
+msgstr "Kullanıcının tam adını isteyin"
+
+#. Translators: This is used to request the user's full name for a third party
+#. service.
+#: lti_xblock.py:579
+msgid "Select True to request the user's full name."
+msgstr "Kullanıcının tam adını istemek için True'yu seçin."
+
+#: lti_xblock.py:584
+msgid "Request user's email"
+msgstr "Kullanıcının e-posta adresini iste"
+
+#. Translators: This is used to request the user's email for a third party
+#. service.
+#: lti_xblock.py:586
+msgid "Select True to request the user's email address."
+msgstr "Kullanıcının e-posta adresini istemek için True'yu seçin."
+
+#: lti_xblock.py:592
+msgid "Send extra parameters"
+msgstr "Ekstra parametreler gönder"
+
+#: lti_xblock.py:593
+msgid ""
+"Select True to send the extra parameters, which might contain Personally "
+"Identifiable Information. The processors are site-wide, please consult the "
+"site administrator if you have any questions."
+msgstr ""
+"Kişisel olarak tanımlanabilir bilgiler (PII) içerebilecek ek parametreleri "
+"göndermek için True seçeneğini belirleyin. İşleyiciler site genelinde "
+"geçerlidir; herhangi bir sorunuz olursa lütfen site yöneticisine danışın."
+
+#: lti_xblock.py:668
+msgid "Custom Parameters must be a list"
+msgstr "Özel Parametreler bir liste olmalıdır"
+
+#: lti_xblock.py:675
+msgid "Custom Parameters should be strings in \"x=y\" format."
+msgstr "Özel Parametreler \"x=y\" biçiminde dizgeler olmalıdır."
+
+#: lti_xblock.py:685
+msgid ""
+"Reusable configuration ID must be set when using external config (Example: "
+"\"x:y\")."
+msgstr ""
+"Harici yapılandırma kullanılırken yeniden kullanılabilir yapılandırma "
+"kimliği ayarlanmalıdır (Örnek: \"x:y\")."
+
+#: lti_xblock.py:709
+msgid ""
+"The specified LTI ID is not configured in this course's Advanced Settings."
+msgstr ""
+"Belirtilen LTI kimliği bu dersin Gelişmiş Ayarlar bölümünde "
+"yapılandırılmamış."
+
+#: lti_xblock.py:838 lti_xblock.py:1129
+msgid "Could not get user data for current request"
+msgstr "Mevcut istek için kullanıcı verileri alınamadı"
+
+#: lti_xblock.py:878
+msgid ""
+"Could not parse LTI passport: {lti_passport!r}. Should be \"id:key:secret\" "
+"string."
+msgstr ""
+"LTI pasaportu ayrıştırılamadı: {lti_passport!r}. \"id:key:secret\" dizgesi "
+"olmalıdır."
+
+#: lti_xblock.py:896 lti_xblock.py:910 lti_xblock.py:926
+msgid "Could not get user id for current request"
+msgstr "Mevcut istek için kullanıcı kimliği alınamadı"
+
+#: lti_xblock.py:1062
+msgid ""
+"Could not parse custom parameter: {custom_parameter!r}. Should be \"x=y\" "
+"string."
+msgstr ""
+"Özel parametre ayrıştırılamadı: {custom_parameter!r}. \"x=y\" dizgesi "
+"olmalıdır."
+
+#: lti_xblock.py:1452
+msgid "[LTI]: Real user not found against anon_id: {}"
+msgstr "[LTI]: anon_id: {} ile eşleşen gerçek kullanıcı bulunamadı"
+
+#: models.py:85
+msgid "Configuration Stored on XBlock fields"
+msgstr "XBlock alanlarında saklanan yapılandırma"
+
+#: models.py:86
+msgid "Configuration Stored on this model"
+msgstr "Bu modelde saklanan yapılandırma"
+
+#: models.py:87
+msgid "Configuration Stored on external service"
+msgstr "Yapılandırma Harici hizmette saklandı"
+
+#: models.py:119
+msgid "LTI configuration data."
+msgstr "LTI yapılandırma verileri."
+
+#: models.py:126
+msgid "The URL of the external tool that initiates the launch."
+msgstr "Başlatmayı tetikleyen harici aracın URL adresi."
+
+#: models.py:131
+msgid "Client key provided by the LTI tool provider."
+msgstr "LTI aracı sağlayıcısı tarafından sağlanan istemci anahtarı."
+
+#: models.py:137
+msgid "Client secret provided by the LTI tool provider."
+msgstr "LTI aracı sağlayıcısı tarafından sağlanan istemci secret'ı."
+
+#: models.py:143
+msgid "Platform's generated Private key. Keep this value secret."
+msgstr "Platformun oluşturduğu Özel anahtar. Bu değeri gizli tutun."
+
+#: models.py:149
+msgid "Platform's generated Private key ID"
+msgstr "Platformun oluşturduğu Özel anahtar kimliği"
+
+#: models.py:154
+msgid "Platform's generated JWK keyset."
+msgstr "Platformun oluşturduğu JWK anahtar seti."
+
+#: models.py:160
+msgid "Client ID used by LTI tool"
+msgstr "LTI aracı tarafından kullanılan istemci kimliği"
+
+#: models.py:256
+msgid "LTI Configuration stores on XBlock needs a block location set."
+msgstr ""
+"XBlock'taki LTI Yapılandırma depolarının bir block konumu ayarına ihtiyacı "
+"var."
+
+#: models.py:261
+msgid ""
+"LTI Configuration using reusable configuration needs a external ID in "
+"\"x:y\" format."
+msgstr ""
+"Yeniden kullanılabilir yapılandırmayı kullanan LTI Yapılandırması \"x:y\" "
+"biçiminde harici bir kimliğe ihtiyaç duyar."
+
+#: models.py:268
+msgid ""
+"LTI Configuration stored on the model for LTI 1.3 must have a value for one "
+"of lti_1p3_tool_public_key or lti_1p3_tool_keyset_url."
+msgstr ""
+"LTI 1.3 için model üzerinde saklanan LTI yapılandırmasının "
+"lti_1p3_tool_public_key veya lti_1p3_tool_keyset_url alanlarından en az biri"
+" için bir değere sahip olması gerekir."
+
+#: models.py:275
+msgid ""
+"CONFIG_ON_XBLOCK and CONFIG_EXTERNAL are not supported for LTI 1.3 "
+"Proctoring Services."
+msgstr ""
+"CONFIG_ON_XBLOCK ve CONFIG_EXTERNAL, LTI 1.3 Gözetim Hizmetleri içinde "
+"desteklenmez."
+
+#: models.py:283
+msgid "Invalid LTI configuration."
+msgstr "Geçersiz LTI yapılandırması."
+
+#: plugin/views.py:575
+msgid "The selected content type is not supported by Open edX."
+msgstr "Seçilen içerik türü Open edX tarafından desteklenmiyor."
+
+#: plugin/views.py:590
+msgid "You don't have access to save LTI Content Items."
+msgstr "LTI İçerik Öğelerini kaydetme erişiminiz yok."
+
+#: plugin/views.py:591
+msgid ""
+"Please check that you have course staff permissions and double check this "
+"block's LTI settings."
+msgstr ""
+"Lütfen ders personeli izinlerinizin olup olmadığını denetleyin ve bu blockun"
+" LTI ayarlarını tekrar kontrol edin."
+
+#: templates/html/lti-dl/dl_response_error.html:6
+msgid "LTI Deep Linking failed."
+msgstr "LTI Derin Bağlantılama başarısız oldu."
+
+#: templates/html/lti-dl/dl_response_saved.html:6
+msgid "LTI Deep Linking"
+msgstr "LTI Derin Bağlantılama"
+
+#: templates/html/lti-dl/dl_response_saved.html:10
+msgid "The LTI Deep Linking content was successfully saved in the LMS."
+msgstr "LTI Derin Bağlantılama içeriği LMS içine başarıyla kaydedildi."
+
+#: templates/html/lti-dl/dl_response_saved.html:13
+msgid "You can safely close this page now."
+msgstr "Artık bu sayfayı güvenle kapatabilirsiniz."
+
+#: templates/html/lti_1p3_permission_error.html:10
+msgid "Unauthorized."
+msgstr "Yetkisiz."
+
+#: templates/html/lti_1p3_permission_error.html:13
+msgid ""
+"Students don't have permissions to perform LTI Deep Linking configuration "
+"launches."
+msgstr ""
+"Öğrencilerin LTI Derin Bağlantılama yapılandırması başlatma işlemlerini "
+"gerçekleştirme izinleri yoktur."
+
+#: templates/html/lti_1p3_studio.html:3
+msgid "LTI 1.3 Launches can only be performed from the LMS."
+msgstr "LTI 1.3 Başlatmaları yalnızca LMS içinden gerçekleştirilebilir."
+
+#: templates/html/lti_1p3_studio.html:7
+msgid ""
+"To set up the LTI integration, you need to register the LMS in the tool with"
+" the information provided below."
+msgstr ""
+"LTI entegrasyonunu kurmak için aşağıda verilen bilgilerle LMS'i araç içinde "
+"kaydetmeniz gerekir."
+
+#: templates/html/lti_1p3_studio.html:11
+msgid "Client ID: "
+msgstr "Müşteri Kimliği: "
+
+#: templates/html/lti_1p3_studio.html:16
+msgid "Deployment ID: "
+msgstr "Deployment Kimliği: "
+
+#: templates/html/lti_1p3_studio.html:21
+msgid "Keyset URL: "
+msgstr "Anahtar seti URL: "
+
+#: templates/html/lti_1p3_studio.html:26
+msgid "Access Token URL: "
+msgstr "Erişim Belirteci URL: "
+
+#: templates/html/lti_1p3_studio.html:31
+msgid "Login URL: "
+msgstr "Giriş URL: "
+
+#: templates/html/lti_1p3_studio.html:39
+msgid "Deep Linking is configured on this tool."
+msgstr "Derin Bağlantılama bu araçta yapılandırılmıştır."
+
+#: templates/html/lti_1p3_studio.html:40
+msgid "The Deep Linking configuration stored is presented below:"
+msgstr "Saklanan Derin Bağlantı yapılandırması aşağıda sunulmuştur:"
+
+#: templates/html/lti_1p3_studio.html:45
+msgid "If you run deep linking again, the content above will be replaced."
+msgstr ""
+"Derin bağlantılamayı tekrar çalıştırırsanız, yukarıdaki içerik "
+"değiştirilecektir."
+
+#: templates/html/lti_1p3_studio.html:49
+msgid "You can configure this tool's content using LTI Deep Linking."
+msgstr ""
+"Bu aracın içeriğini LTI Derin Bağlantılamayı kullanarak "
+"yapılandırabilirsiniz."
+
+#: templates/html/lti_1p3_studio.html:50
+msgid "To do that, make sure the block is published and click the link below:"
+msgstr ""
+"Bunu yapmak için blockun yayınlandığından emin olun ve aşağıdaki bağlantıya "
+"tıklayın:"
+
+#: templates/html/lti_1p3_studio.html:53
+msgid "Deep Linking Launch - Configure tool"
+msgstr "Derin Bağlantılama Başlatma - Yapılandırma aracı"
+
+#: templates/html/lti_launch.html:27
+msgid "Press to Launch"
+msgstr "Başlatmak için tıklayın"
+
+#: templates/html/lti_launch_error.html:10
+msgid "There was an error while launching the LTI tool: "
+msgstr "LTI aracı başlatılırken bir hata oluştu: "
+
+#: templates/html/lti_launch_error.html:16
+#: templates/html/lti_proctoring_start_error.html:13
+msgid ""
+"If you're seeing this on a live course, please contact the course staff."
+msgstr ""
+"Bunu canlı bir derste görüyorsanız, lütfen ders personeliyle iletişime "
+"geçin."
+
+#: templates/html/lti_proctoring_start_error.html:10
+msgid "There was an error while starting your LTI proctored assessment."
+msgstr "LTI gözetimli değerlendirmeniz başlatılırken bir hata oluştu."
+
+#: templates/html/lti_start_assessment.html:11
+msgid "Sending you back to your exam."
+msgstr "Seni sınavına geri gönderiyorum."
+
+#: templates/html/lti_start_assessment.html:15
+msgid "Return to exam."
+msgstr "Sınava dön."
+
+#: static/js/xblock_lti_consumer.js:143
+msgid "Cancel"
+msgstr "İptal"
+
+#: static/js/xblock_lti_consumer.js:145
+msgid "OK"
+msgstr "Tamam"
+
+#: static/js/xblock_lti_consumer.js:174
+msgid ""
+"Click OK to have your username, full name, and e-mail address sent to a 3rd "
+"party application."
+msgstr ""
+"Kullanıcı adınızın, tam adınızın ve e-posta adresinizin 3. taraf bir "
+"uygulamaya gönderilmesini sağlamak için Tamam düğmesine tıklayın."
+
+#: static/js/xblock_lti_consumer.js:178
+msgid ""
+"Click OK to have your username and e-mail address sent to a 3rd party "
+"application."
+msgstr ""
+"Kullanıcı adınızın ve e-posta adresinizin 3. taraf bir uygulamaya "
+"gönderilmesi için Tamam düğmesine tıklayın."
+
+#: static/js/xblock_lti_consumer.js:181
+msgid ""
+"Click OK to have your username and full name sent to a 3rd party "
+"application."
+msgstr ""
+"Kullanıcı adınızın ve tam adınızın 3. taraf bir uygulamaya gönderilmesini "
+"sağlamak için Tamam düğmesine tıklayın."
+
+#: static/js/xblock_lti_consumer.js:184
+msgid ""
+"Click OK to have your full name and e-mail address sent to a 3rd party "
+"application."
+msgstr ""
+"Tam adınızın ve e-posta adresinizin 3. taraf bir uygulamaya gönderilmesini "
+"sağlamak için Tamam düğmesine tıklayın."
+
+#: static/js/xblock_lti_consumer.js:187
+msgid "Click OK to have your username sent to a 3rd party application."
+msgstr ""
+"Kullanıcı adınızın 3. taraf bir uygulamaya gönderilmesini sağlamak için "
+"Tamam düğmesine tıklayın."
+
+#: static/js/xblock_lti_consumer.js:189
+msgid "Click OK to have your full name sent to a 3rd party application."
+msgstr ""
+"Tam adınızın 3. taraf bir uygulamaya gönderilmesini sağlamak için Tamam "
+"düğmesine tıklayın."
+
+#: static/js/xblock_lti_consumer.js:191
+msgid "Click OK to have your e-mail address sent to a 3rd party application."
+msgstr ""
+"E-posta adresinizin 3. taraf bir uygulamaya gönderilmesi için Tamam "
+"düğmesine tıklayın."
+
+#: static/js/xblock_lti_consumer.js:198
+msgid "Click Cancel to return to this page without sending your information."
+msgstr ""
+"Bilgilerinizi göndermeden bu sayfaya dönmek için İptal düğmesine tıklayın."

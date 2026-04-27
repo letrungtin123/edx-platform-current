@@ -1,0 +1,89 @@
+# Rejects PR if requirements files are inconsistent.
+#
+# This will produce a failing check for any PR that does not produce a
+# clean run of `make compile-requirements` on Linux.
+
+name: Consistent Python dependencies
+
+on:
+  pull_request:
+  merge_group:
+
+defaults:
+  run:
+    shell: bash # strict bash
+
+jobs:
+  check-requirements:
+    name: Compile requirements
+    runs-on: ubuntu-24.04
+
+    steps:
+      # Always checkout the code because we don't always have a PR url.
+      - uses: actions/checkout@v5
+
+      # Only run remaining steps if there are changes to requirements/**
+      # We do this instead of using path based short-circuiting.
+      # see https://stackoverflow.com/questions/77996177/how-can-i-handle-a-required-check-that-isnt-always-triggered
+      # for some more details.
+      - name: "Decide whether to short-circuit"
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_SHA="${{ github.event.merge_group.base_sha }}"
+          fi
+
+          # Fetch the base sha so we can compare to it. It's not checked out by
+          # default.
+          git fetch origin "$BASE_SHA"
+
+          # The ^"? is because git may quote weird file paths
+          if git diff --name-only "$BASE_SHA" | grep -P '^"?((requirements/)|(scripts/.*?/requirements/))'; then
+            echo "RELEVANT=true" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/setup-python@v6
+        if: ${{ env.RELEVANT == 'true' }}
+        with:
+          python-version: '3.11'
+
+      - name: "Recompile requirements"
+        if: ${{ env.RELEVANT == 'true' }}
+        run: |
+          make compile-requirements
+
+      - name: Fail if compiling requirements caused changes
+        if: ${{ env.RELEVANT == 'true' }}
+        run: |
+          SUMMARY_HELP=$(cat <<'EOMARKDOWN'
+          # Inconsistent Python dependencies
+
+          It appears that the Python dependencies in this PR are inconsistent: A re-run of
+          `make compile-requirements` produced changes. This might mean that your PR would
+          fail to deploy properly in production, or could have inconsistent behavior for
+          developers.
+
+          Please see the requirements README for information on how to resolve this:
+          https://github.com/openedx/edx-platform/blob/master/requirements/README.rst#inconsistent-dependencies
+          EOMARKDOWN
+          )
+
+          make_summary () {
+              echo "$SUMMARY_HELP"
+              echo
+              echo "----"
+              echo
+              echo "Diff follows:"
+              echo
+              echo '```'
+              git diff || true
+              echo '```'
+          }
+
+          git diff --quiet --exit-code || {
+              # Job Summaries are cool, but echo to the job log as well, because
+              # that's where the PR checks will actually link to.
+              make_summary | tee -a $GITHUB_STEP_SUMMARY
+              exit 1
+          }

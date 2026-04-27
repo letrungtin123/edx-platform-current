@@ -1,0 +1,203 @@
+# edX translation file.
+# Copyright (C) 2025 EdX
+# This file is distributed under the GNU AFFERO GENERAL PUBLIC LICENSE.
+# EdX Team <info@edx.org>, 2025.
+# 
+# Translators:
+# Brian Smith, 2025
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.1a\n"
+"Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
+"POT-Creation-Date: 2023-06-13 08:00+0000\n"
+"PO-Revision-Date: 2025-11-17 07:23+0000\n"
+"Last-Translator: Brian Smith, 2025\n"
+"Language-Team: Italian (Italy) (https://app.transifex.com/open-edx/teams/6205/it_IT/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: it_IT\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+
+#: drag_and_drop_v2.py:83
+msgid "Title"
+msgstr "Titolo"
+
+#: drag_and_drop_v2.py:86
+msgid "Drag and Drop"
+msgstr "Trascina e Rilascia"
+
+#: drag_and_drop_v2.py:91
+msgid "Mode"
+msgstr "Modalità"
+
+#: drag_and_drop_v2.py:100
+msgid "Standard"
+msgstr "Standard"
+
+#: drag_and_drop_v2.py:101
+msgid "Assessment"
+msgstr "Valutazione"
+
+#: drag_and_drop_v2.py:108
+msgid "Maximum attempts"
+msgstr "Tentativi massimi"
+
+#: drag_and_drop_v2.py:110
+msgid ""
+"Defines the number of times a student can try to answer this problem. If the"
+" value is not set, infinite attempts are allowed."
+msgstr ""
+"Definisce il numero di volte in cui uno studente può provare a rispondere a "
+"questo problema. Se il valore non è impostato, vengono consentiti infiniti "
+"tentativi."
+
+#: drag_and_drop_v2.py:119
+msgid "Show title"
+msgstr "Mostra titolo"
+
+#: drag_and_drop_v2.py:120
+msgid "Display the title to the learner?"
+msgstr "Mostra il titolo al discente?"
+
+#: drag_and_drop_v2.py:127
+msgid "Problem text"
+msgstr "Testo del problema"
+
+#: drag_and_drop_v2.py:128
+msgid "The description of the problem or instructions shown to the learner."
+msgstr "Descrizione del problema o istruzioni mostrate al discente."
+
+#: drag_and_drop_v2.py:166
+msgid "Problem Weight"
+msgstr "Peso del problema"
+
+#: drag_and_drop_v2.py:167
+msgid "Defines the number of points the problem is worth."
+msgstr "Definisce il numero di punto che il problema vale."
+
+#: drag_and_drop_v2.py:174
+msgid "Item background color"
+msgstr "Colore di sfondo dell'oggetto"
+
+#: drag_and_drop_v2.py:182
+msgid "Item text color"
+msgstr "Coloro del testo dell'oggetto"
+
+#: drag_and_drop_v2.py:198
+msgid "Problem data"
+msgstr "Dato del problema"
+
+#: drag_and_drop_v2.py:217
+msgid "Number of attempts learner used"
+msgstr "Numero di tentativi che il discente ha utilizzato"
+
+#: drag_and_drop_v2.py:794 drag_and_drop_v2.py:912
+msgid "Max number of attempts reached"
+msgstr "Numero massimo di tentativi raggiunto"
+
+#: templates/html/drag_and_drop.html:4
+msgid "Loading drag and drop problem."
+msgstr "Caricamento del problema di drag and drop."
+
+#: templates/html/drag_and_drop_edit.html:90
+msgid "Introductory feedback"
+msgstr "Feedback introduttivo"
+
+#: templates/html/drag_and_drop_edit.html:95
+msgid "Final feedback"
+msgstr "Feedback finale"
+
+#: templates/html/drag_and_drop_edit.html:109
+msgid "Zones"
+msgstr "Zone"
+
+#: templates/html/drag_and_drop_edit.html:126
+msgid "Background URL"
+msgstr "URL di sfondo"
+
+#: templates/html/drag_and_drop_edit.html:133
+msgid "Change background"
+msgstr "Cambia sfondo"
+
+#: templates/html/drag_and_drop_edit.html:184
+msgid "Background description"
+msgstr "Descrizione sfondo"
+
+#: templates/html/drag_and_drop_edit.html:199
+msgid "Zone labels"
+msgstr "Etichette della zona"
+
+#: templates/html/drag_and_drop_edit.html:202
+msgid "Display label names on the image"
+msgstr "Visualizza i nomi delle etichette sull'immagine"
+
+#: templates/html/drag_and_drop_edit.html:206
+msgid "Zone borders"
+msgstr "Bordi della zona"
+
+#: templates/html/drag_and_drop_edit.html:220
+msgid "Zone definitions"
+msgstr "Definizioni della zona"
+
+#: templates/html/drag_and_drop_edit.html:226
+msgid "Add a zone"
+msgstr "Aggiungi una zona"
+
+#: templates/html/drag_and_drop_edit.html:240
+msgid "Items"
+msgstr "Oggetti"
+
+#: templates/html/drag_and_drop_edit.html:278
+msgid "Add an item"
+msgstr "Aggiungi un oggetto"
+
+#: templates/html/drag_and_drop_edit.html:288
+msgid "Continue"
+msgstr "Continua"
+
+#: templates/html/drag_and_drop_edit.html:292
+msgid "Save"
+msgstr "Salva"
+
+#: templates/html/drag_and_drop_edit.html:296
+msgid "Cancel"
+msgstr "Annulla"
+
+#: utils.py:121
+#, python-brace-format
+msgid "Your highest score is {score}"
+msgstr "Il tuo punteggio più alto è {score}"
+
+#: public/js/drag_and_drop.js:48 public/js/drag_and_drop.js:399
+msgid "Submitting"
+msgstr "In fase di invio"
+
+#: public/js/drag_and_drop.js:336 public/js/drag_and_drop.js:341
+msgid "Explanation"
+msgstr "Spiegazione"
+
+#: public/js/drag_and_drop.js:506 public/js/drag_and_drop.js:1243
+msgid "Some of your answers were not correct."
+msgstr "Alcune delle tue risposte non erano corrette."
+
+#: public/js/drag_and_drop.js:507 public/js/drag_and_drop.js:1246
+msgid "Hints:"
+msgstr "Suggerimenti:"
+
+#: public/js/drag_and_drop.js:577
+msgid "Correct"
+msgstr "Corretto"
+
+#: public/js/drag_and_drop.js:577
+msgid "Incorrect"
+msgstr "Errato"
+
+#: public/js/drag_and_drop.js:662
+msgid "Problem"
+msgstr "Problema"
+
+#: public/js/drag_and_drop_edit.js:748
+msgid "Saving"
+msgstr "Salvataggio in corso"

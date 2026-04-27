@@ -1,0 +1,137 @@
+# #-#-#-#-#  djangojs.po (edx-ora2)  #-#-#-#-#
+# edX translation file
+# Copyright (C) 2018 edX
+# This file is distributed under the GNU AFFERO GENERAL PUBLIC LICENSE.
+# EdX Team <info@edx.org>, 2018.
+# 
+# Translators:
+# Brian Smith, 2025
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: edx-ora2\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-30 00:45+0000\n"
+"PO-Revision-Date: 2025-11-17 07:23+0000\n"
+"Last-Translator: Brian Smith, 2025\n"
+"Language-Team: Thai (https://app.transifex.com/open-edx/teams/301281/th/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: th\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:78 xblock/static/js/src/oa_server.js:114
+#: xblock/static/js/src/oa_server.js:138
+msgid "This section could not be loaded."
+msgstr "เนื้อหาส่วนนี้ไม่สามารถโหลดได้"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:215
+msgid "This response could not be submitted."
+msgstr "ไม่สามารถส่งคำตอบนี้ได้"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:285
+msgid "This feedback could not be submitted."
+msgstr "ไม่สามารถส่งผลตอบกลับนี้ได้"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:310 xblock/static/js/src/oa_server.js:401
+#: xblock/static/js/src/oa_server.js:424
+msgid "This assessment could not be submitted."
+msgstr "ไม่สามารถส่งการะประเมินนี้ได้"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:447
+msgid "One or more rescheduling tasks failed."
+msgstr "หนึ่งหรือมากกว่าหนึ่งงานที่ล้มเหลวในการปรับเปลี่ยนตาราง"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:509
+msgid "This problem could not be saved."
+msgstr "ไม่สามารถบันทึกปัญหานี้ได้"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:530
+msgid "The server could not be contacted."
+msgstr "ไม่สามารถติดต่อเซิฟเวอร์"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:556
+msgid "Could not retrieve upload url."
+msgstr "ไม่สามารถเรียก url ที่ต้องการอัพโหลด"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:614
+msgid "Could not retrieve download url."
+msgstr "ไม่สามารถเรียก url ที่ต้องการดาวน์โหลด"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:8
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:1
+#: xblock/static/js/src/oa_server.js:640
+msgid "The submission could not be removed from the grading pool."
+msgstr "การส่งไม่สามารถลบออกจากผลการให้คะแนน"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:362
+#: xblock/static/js/src/lms/oa_response.js:509
+msgid "Error"
+msgstr "ผิดพลาด"
+
+#: xblock/static/dist/openassessment-lms.0ed216fc6ce56a916473.js:362
+#: xblock/static/js/src/lms/oa_response.js:540
+msgid ""
+"You're about to submit your response for this assignment. After you submit "
+"this response, you can't change it or submit a new response."
+msgstr ""
+"คุณได้ส่งการตอบของคุณสำหรับงานนี้ หลังจากส่งแล้ว "
+"คุณจะไม่สามารถเปลี่ยนแปลงหรือส่งใหม่ได้อีก"
+
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:11
+#: xblock/static/js/src/studio/oa_container_item.js:43
+msgid "Unnamed Option"
+msgstr "ตัวเลือกไม่ระบุชื่อ"
+
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:11
+#: xblock/static/js/src/studio/oa_container_item.js:53
+msgid "Not Selected"
+msgstr "ไม่ถูกเลือก"
+
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:11
+#: xblock/static/js/src/studio/oa_edit_listeners.js:100
+msgid "Criterion Added"
+msgstr "เกณฑ์พิจารณาเพิ่มเติม"
+
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:11
+#: xblock/static/js/src/studio/oa_edit_listeners.js:150
+#: xblock/static/js/src/studio/oa_edit_listeners.js:186
+msgid "Option Deleted"
+msgstr "ตัวเลือกถูกลบ"
+
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:11
+#: xblock/static/js/src/studio/oa_edit_listeners.js:214
+msgid "Criterion Deleted"
+msgstr "เกณฑ์พิจารณาถูกลบ"
+
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:11
+#: xblock/static/js/src/studio/oa_edit_listeners.js:394
+msgid "Warning"
+msgstr "คำเตือน"
+
+#: xblock/static/dist/openassessment-studio.b58bb4e55f63dadac6de.js:11
+#: xblock/static/js/src/studio/oa_edit_listeners.js:395
+msgid ""
+"Changes to steps that are not selected as part of the assignment will not be"
+" saved."
+msgstr ""
+"การเปลี่ยนแปลงในขั้นตอนที่ไม่ได้รับเลือกให้เป็นส่วนหนึ่งของงานที่ได้รับมอบหมายจะไม่ถูกบันทึก"

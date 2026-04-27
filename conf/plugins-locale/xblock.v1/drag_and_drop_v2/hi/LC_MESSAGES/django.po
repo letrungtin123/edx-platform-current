@@ -1,0 +1,117 @@
+# edX translation file.
+# Copyright (C) 2025 EdX
+# This file is distributed under the GNU AFFERO GENERAL PUBLIC LICENSE.
+# EdX Team <info@edx.org>, 2025.
+# 
+# Translators:
+# Brian Smith, 2025
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.1a\n"
+"Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
+"POT-Creation-Date: 2023-06-13 08:00+0000\n"
+"PO-Revision-Date: 2025-11-17 07:23+0000\n"
+"Last-Translator: Brian Smith, 2025\n"
+"Language-Team: Hindi (https://app.transifex.com/open-edx/teams/6205/hi/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: hi\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: default_data.py:14
+msgid "The Top Zone"
+msgstr "शीर्ष क्षेत्र"
+
+#: default_data.py:25
+msgid "No, this item does not belong here. Try again."
+msgstr "नहीं, यह आइटम यहाँ नहीं है। पुनः प्रयास करें।"
+
+#: default_data.py:26
+msgid "You silly, there are no zones for this one."
+msgstr "आप मूर्खतापूर्ण हैं, इसके लिए कोई क्षेत्र नहीं है।"
+
+#: default_data.py:27
+msgid "Of course it goes here! It goes anywhere!"
+msgstr "कहीं भी चला जाता है |"
+
+#: default_data.py:32
+msgid "Goes anywhere"
+msgstr "कहीं भी चला जाता है |"
+
+#: default_data.py:33
+msgid "I don't belong anywhere"
+msgstr "मैं कहीं भी नहीं हूं"
+
+#: default_data.py:35
+msgid "Drag the items onto the image above."
+msgstr "ऊपर की छवि पर आइटम खींचें।"
+
+#: drag_and_drop_v2.py:83
+msgid "Title"
+msgstr "शीर्षक"
+
+#: drag_and_drop_v2.py:91
+msgid "Mode"
+msgstr "प्रणाली"
+
+#: drag_and_drop_v2.py:110
+msgid ""
+"Defines the number of times a student can try to answer this problem. If the"
+" value is not set, infinite attempts are allowed."
+msgstr ""
+"इस समस्या का उत्तर देने के लिए एक छात्र कितनी बार कोशिश कर सकता है, इसे "
+"परिभाषित करता है। यदि मान सेट नहीं है, तो अनंत प्रयासों की अनुमति है।"
+
+#: drag_and_drop_v2.py:166
+msgid "Problem Weight"
+msgstr "समस्या वजन"
+
+#: templates/html/drag_and_drop_edit.html:240
+msgid "Items"
+msgstr "इटेम्स "
+
+#: templates/html/drag_and_drop_edit.html:288
+msgid "Continue"
+msgstr "जारी रखें"
+
+#: templates/html/drag_and_drop_edit.html:292
+msgid "Save"
+msgstr "सेव करें"
+
+#: templates/html/drag_and_drop_edit.html:296
+msgid "Cancel"
+msgstr "रद्द करें"
+
+#: public/js/drag_and_drop.js:48 public/js/drag_and_drop.js:399
+msgid "Submitting"
+msgstr "भेजने से"
+
+#: public/js/drag_and_drop.js:321 public/js/drag_and_drop.js:325
+msgid "Feedback"
+msgstr "प्रतिक्रिया"
+
+#: public/js/drag_and_drop.js:357 public/js/drag_and_drop.js:547
+msgid "Close"
+msgstr "बंद करे"
+
+#: public/js/drag_and_drop.js:412
+msgid "Submit"
+msgstr "प्रस्तुत"
+
+#: public/js/drag_and_drop.js:577
+msgid "Correct"
+msgstr "सही"
+
+#: public/js/drag_and_drop.js:577
+msgid "Incorrect"
+msgstr "ग़लत"
+
+#: public/js/drag_and_drop.js:662
+msgid "Problem"
+msgstr "समस्या"
+
+#: public/js/drag_and_drop_edit.js:748
+msgid "Saving"
+msgstr "सेव हो रहा है"

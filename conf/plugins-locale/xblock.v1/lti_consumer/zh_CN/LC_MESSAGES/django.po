@@ -1,0 +1,135 @@
+# edX translation file.
+# Copyright (C) 2025 EdX
+# This file is distributed under the GNU AFFERO GENERAL PUBLIC LICENSE.
+# EdX Team <info@edx.org>, 2025.
+# 
+# Translators:
+# Brian Smith, 2025
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: 0.1a\n"
+"Report-Msgid-Bugs-To: openedx-translation@googlegroups.com\n"
+"POT-Creation-Date: 2023-06-13 08:00+0000\n"
+"PO-Revision-Date: 2025-11-17 07:23+0000\n"
+"Last-Translator: Brian Smith, 2025\n"
+"Language-Team: Chinese (China) (https://app.transifex.com/open-edx/teams/6205/zh_CN/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: lti_xblock.py:262
+msgid "Display Name"
+msgstr "显示名称"
+
+#: lti_xblock.py:271
+msgid "LTI Application Information"
+msgstr "LTI应用信息"
+
+#: lti_xblock.py:273
+msgid ""
+"Enter a description of the third party application. If requesting username "
+"and/or email, use this text box to inform users why their username and/or "
+"email will be forwarded to a third party application."
+msgstr "输入第三方应用程序的描述。如果需要输入用户名和/或电子邮件， 使用此文本框来告诉用户为什么第三方应用程序需要用户的用户名及电子邮箱。"
+
+#: lti_xblock.py:412
+msgid "Disabled"
+msgstr "已停用"
+
+#: lti_xblock.py:427
+msgid "LTI ID"
+msgstr "LTI ID"
+
+#: lti_xblock.py:441
+msgid "LTI URL"
+msgstr "LTI URL"
+
+#: lti_xblock.py:456
+msgid "Custom Parameters"
+msgstr "自定义参数"
+
+#: lti_xblock.py:484
+msgid "Button Text"
+msgstr "按钮文本"
+
+#: lti_xblock.py:524
+msgid "Scored"
+msgstr "可评分"
+
+#: lti_xblock.py:525
+msgid ""
+"Select True if this component will receive a numerical score from the "
+"external LTI system."
+msgstr "如果允许该组件接收来自外部的LTI系统的数值分数请选择True。"
+
+#: lti_xblock.py:532
+msgid ""
+"Enter the number of points possible for this component.  The default value "
+"is 1.0.  This setting is only used when Scored is set to True."
+msgstr "输入该组件可能的分数，默认值为 1.0。该设置仅在“可评分”设置为true的时候才有用。"
+
+#: lti_xblock.py:541
+msgid ""
+"The score kept in the xblock KVS -- duplicate of the published score in "
+"django DB"
+msgstr "分数保存在xblock KVS中——已公布分数的分本存储在django数据库中"
+
+#: lti_xblock.py:546
+msgid "Comment as returned from grader, LTI2.0 spec"
+msgstr "Comment as returned from grader, LTI2.0 spec"
+
+#: lti_xblock.py:551
+msgid "Hide External Tool"
+msgstr "隐藏扩展工具"
+
+#: lti_xblock.py:553
+msgid ""
+"Select True if you want to use this component as a placeholder for syncing "
+"with an external grading  system rather than launch an external tool.  This "
+"setting hides the Launch button and any IFrames for this component."
+msgstr ""
+"若您想要使用该组件作为一个与外部评分系统同步的占位符，而不是启动一个外部工具，则设该值为Ture。该设置会隐藏启动按钮和该组件的任何内联框架。"
+
+#: lti_xblock.py:561
+msgid "Accept grades past deadline"
+msgstr "接受超过限期的成绩"
+
+#: lti_xblock.py:562
+msgid ""
+"Select True to allow third party systems to post grades past the deadline."
+msgstr "请选择“True”以同意第三方系统在截止日期之后发布成绩。"
+
+#: lti_xblock.py:570
+msgid "Request user's username"
+msgstr "需要用户名"
+
+#. Translators: This is used to request the user's username for a third party
+#. service.
+#: lti_xblock.py:572
+msgid "Select True to request the user's username."
+msgstr "选择True 以要求用户的用户名 username。"
+
+#: lti_xblock.py:584
+msgid "Request user's email"
+msgstr "需要用户邮箱"
+
+#. Translators: This is used to request the user's email for a third party
+#. service.
+#: lti_xblock.py:586
+msgid "Select True to request the user's email address."
+msgstr "选择True 以请求用户的邮箱。"
+
+#: templates/html/lti_launch.html:27
+msgid "Press to Launch"
+msgstr "点击来启动"
+
+#: static/js/xblock_lti_consumer.js:143
+msgid "Cancel"
+msgstr "取消"
+
+#: static/js/xblock_lti_consumer.js:145
+msgid "OK"
+msgstr "是的"

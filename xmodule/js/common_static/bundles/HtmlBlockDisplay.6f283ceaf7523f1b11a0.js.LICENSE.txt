@@ -1,0 +1,58 @@
+/*!
+ * Draggabilly PACKAGED v1.2.4
+ * Make that shiz draggable
+ * http://draggabilly.desandro.com
+ * MIT license
+ */
+
+/*!
+ * Draggabilly v1.2.4
+ * Make that shiz draggable
+ * http://draggabilly.desandro.com
+ * MIT license
+ */
+
+/*!
+ * Unidragger v1.1.0
+ * Draggable base class
+ * MIT license
+ */
+
+/*!
+ * Unipointer v1.1.0
+ * base class for doing one thing with pointer event
+ * MIT license
+ */
+
+/*!
+ * classie v1.0.1
+ * class helper functions
+ * from bonzo https://github.com/ded/bonzo
+ * MIT license
+ * 
+ * classie.has( elem, 'my-class' ) -> true/false
+ * classie.add( elem, 'my-new-class' )
+ * classie.remove( elem, 'my-unwanted-class' )
+ * classie.toggle( elem, 'my-class' )
+ */
+
+/*!
+ * eventie v1.0.6
+ * event binding helper
+ *   eventie.bind( elem, 'click', myFn )
+ *   eventie.unbind( elem, 'click', myFn )
+ * MIT license
+ */
+
+/*!
+ * getSize v1.2.2
+ * measure size of elements
+ * MIT license
+ */
+
+/*!
+ * getStyleProperty v1.0.4
+ * original by kangax
+ * http://perfectionkills.com/feature-testing-css-properties/
+ * MIT license
+ */
