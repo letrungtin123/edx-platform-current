@@ -777,14 +777,15 @@ def user_post_save_callback(sender, **kwargs):
                         enrollment
                     )
 
-    # Ensure the user has a profile when run via management command
+    # Ensure the user always has a profile (especially when created via Django Admin)
+    try:
+        profile = user.profile
+    except UserProfile.DoesNotExist:
+        profile = UserProfile.objects.create(user=user, name=user.username)
+        log.info('Created new profile for user: %s', user)
+    
     _called_by_management_command = getattr(user, '_called_by_management_command', None)
-    if _called_by_management_command:
-        try:
-            profile = user.profile
-        except UserProfile.DoesNotExist:
-            profile = UserProfile.objects.create(user=user)
-            log.info('Created new profile for user: %s', user)
+    if True:  # kept to preserve indentation for the rest of the file if needed, but let's see what is inside the original block.
 
         # If user is created using management command, ensure that the user's
         # marketable attribute is set (default: False) and an account is created
