@@ -134,6 +134,9 @@ urlpatterns = [
     # Course API
     path('api/courses/', include('lms.djangoapps.course_api.urls')),
 
+    # LANDA custom API — course files for enrolled learners (no HTML handouts needed)
+    path('api/landa/', include('lms.djangoapps.landa_api.urls')),
+
     # User API endpoints
     path('api/user/', include('openedx.core.djangoapps.user_api.urls')),
     # Note: these are older versions of the User API that will eventually be
