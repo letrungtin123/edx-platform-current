@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quản lý Thư viện — Studio</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#333}
+.header{background:#0075b4;color:#fff;padding:16px 32px;display:flex;align-items:center;gap:16px}
+.header h1{font-size:20px;font-weight:600}
+.header a{color:#fff;text-decoration:none;opacity:.8;font-size:14px}
+.container{max-width:1200px;margin:0 auto;padding:24px}
+.tabs{display:flex;gap:8px;margin-bottom:24px}
+.tab{padding:10px 24px;border:none;border-radius:8px 8px 0 0;cursor:pointer;font-size:14px;font-weight:600;background:#e0e0e0;color:#666;transition:.2s}
+.tab.active{background:#fff;color:#0075b4;box-shadow:0 -2px 0 #0075b4 inset}
+.panel{background:#fff;border-radius:0 12px 12px 12px;padding:24px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:none}
+.panel.active{display:block}
+.toolbar{display:flex;gap:12px;align-items:center;margin-bottom:20px;flex-wrap:wrap}
+.form-row{display:flex;gap:12px;align-items:end;margin-bottom:20px;flex-wrap:wrap;padding:16px;background:#f8fafc;border-radius:8px;border:1px dashed #ccc}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;font-weight:600;color:#666;text-transform:uppercase}
+.form-group input,.form-group select{padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;outline:none;transition:.2s}
+.form-group input:focus,.form-group select:focus{border-color:#0075b4}
+.btn{padding:8px 20px;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;transition:.2s}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:#0075b4;color:#fff}.btn-primary:hover:not(:disabled){background:#005a8c}
+.btn-danger{background:#dc3545;color:#fff}.btn-danger:hover{background:#b02a37}
+.btn-success{background:#198754;color:#fff}.btn-success:hover{background:#146c43}
+.btn-outline{background:#fff;color:#666;border:1px solid #ddd}.btn-outline:hover{background:#f5f5f5}
+.btn-sm{padding:4px 12px;font-size:12px}
+.btn-xs{padding:2px 8px;font-size:11px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 12px;font-size:12px;font-weight:600;color:#666;text-transform:uppercase;border-bottom:2px solid #eee;background:#fafafa}
+td{padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;vertical-align:middle}
+tr:hover td{background:#f8fbff}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;color:#fff}
+.badge-pdf{background:#ea4335}.badge-docx{background:#2b579a}.badge-xlsx{background:#217346}.badge-pptx{background:#d24726}
+.badge-mp4{background:#9333ea}.badge-jpeg,.badge-jpg{background:#0891b2}.badge-png{background:#0d9488}
+.toggle{width:40px;height:22px;border-radius:11px;border:none;cursor:pointer;position:relative;transition:.3s}
+.toggle.on{background:#198754}.toggle.off{background:#ccc}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;transition:.3s}
+.toggle.on::after{left:20px}.toggle.off::after{left:2px}
+.bulk-bar{display:flex;align-items:center;gap:12px;padding:12px;background:#e8f4fd;border-radius:8px;margin-bottom:16px;display:none}
+.bulk-bar.show{display:flex}
+.bulk-bar span{font-size:14px;font-weight:600;color:#0075b4}
+.empty{text-align:center;padding:40px;color:#999;font-size:16px}
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 24px;border-radius:8px;color:#fff;font-weight:600;font-size:14px;z-index:9999;opacity:0;transition:.3s;pointer-events:none}
+.toast.show{opacity:1}.toast.success{background:#198754}.toast.error{background:#dc3545}
+.cat-item{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border:1px solid #eee;border-radius:8px;margin-bottom:8px}
+.cat-item span{font-weight:600}
+.cat-count{font-size:12px;color:#999;margin-left:8px}
+.cb{width:18px;height:18px;cursor:pointer}
+.progress-bar{width:100%;height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:8px;display:none}
+.progress-bar.show{display:block}
+.progress-bar .fill{height:100%;background:#0075b4;border-radius:3px;transition:width .2s}
+.edit-input{border:1px solid #0075b4;padding:4px 8px;border-radius:4px;font-size:14px;font-weight:600;width:200px}
+.page-info{font-size:13px;color:#999;margin-top:12px;display:flex;justify-content:space-between;align-items:center}
+.page-btns button{padding:4px 10px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer;font-size:12px;margin-left:4px}
+.page-btns button:disabled{opacity:.4;cursor:not-allowed}
+.page-btns button.current{background:#0075b4;color:#fff;border-color:#0075b4}
+.search-input{padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;outline:none;width:220px}
+.search-input:focus{border-color:#0075b4}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">← Studio</a>
+  <h1>📚 Quản lý Thư viện Tài liệu</h1>
+</div>
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('docs')">📄 Tài liệu</button>
+    <button class="tab" onclick="switchTab('cats')">📁 Danh mục</button>
+  </div>
+
+  <!-- TAB: Tài liệu -->
+  <div id="panel-docs" class="panel active">
+    <h3 style="margin-bottom:16px">Upload tài liệu mới</h3>
+    <form id="upload-form" class="form-row" enctype="multipart/form-data">
+      <div class="form-group" style="flex:1;min-width:200px">
+        <label>Tiêu đề (để trống = lấy tên file)</label>
+        <input type="text" id="doc-title" placeholder="VD: Báo cáo Q1 2026">
+      </div>
+      <div class="form-group" style="min-width:160px">
+        <label>Danh mục</label>
+        <select id="doc-category"><option value="">-- Chọn --</option></select>
+      </div>
+      <div class="form-group" style="min-width:200px">
+        <label>File ({{ALLOWED_EXT}})</label>
+        <input type="file" id="doc-file" required multiple accept="{{ACCEPT_ATTR}}">
+      </div>
+      <button type="submit" class="btn btn-primary" id="btn-upload">⬆️ Upload</button>
+    </form>
+    <div class="progress-bar" id="upload-progress"><div class="fill" id="upload-fill"></div></div>
+
+    <div class="toolbar">
+      <input class="search-input" id="doc-search" placeholder="🔍 Tìm theo tên..." oninput="onDocSearch()">
+      <select id="filter-cat" onchange="loadDocs()" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px">
+        <option value="">Tất cả danh mục</option>
+      </select>
+      <select id="filter-ext" onchange="loadDocs()" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px">
+        <option value="">Tất cả loại file</option>
+        <option value="pdf">PDF</option><option value="docx">DOCX</option>
+        <option value="xlsx">XLSX</option><option value="pptx">PPTX</option>
+        <option value="mp4">MP4</option><option value="jpg">JPG</option>
+        <option value="jpeg">JPEG</option><option value="png">PNG</option>
+      </select>
+    </div>
+
+    <div id="bulk-bar" class="bulk-bar">
+      <input type="checkbox" class="cb" id="select-all" onchange="toggleSelectAll(this)">
+      <span id="bulk-count">0 đã chọn</span>
+      <button class="btn btn-success btn-sm" onclick="bulkAction('show')">🔓 Hiển thị</button>
+      <button class="btn btn-outline btn-sm" onclick="bulkAction('hide')">🔒 Ẩn</button>
+    </div>
+
+    <table>
+      <thead><tr>
+        <th style="width:30px"><input type="checkbox" class="cb" id="th-cb" onchange="toggleSelectAll(this)"></th>
+        <th>Tên tài liệu</th><th style="width:70px">Loại</th><th style="width:90px">Dung lượng</th>
+        <th style="width:110px">Danh mục</th><th style="width:80px">Hiển thị</th>
+        <th style="width:100px">Ngày tạo</th><th style="width:90px"></th>
+      </tr></thead>
+      <tbody id="doc-tbody"></tbody>
+    </table>
+    <div id="doc-empty" class="empty" style="display:none">Chưa có tài liệu nào.</div>
+    <div id="doc-paging" class="page-info"></div>
+  </div>
+
+  <!-- TAB: Danh mục -->
+  <div id="panel-cats" class="panel">
+    <h3 style="margin-bottom:16px">Tạo danh mục mới</h3>
+    <div class="form-row">
+      <div class="form-group" style="flex:1">
+        <label>Tên danh mục *</label>
+        <input type="text" id="cat-name" placeholder="VD: Nhân sự, Đào tạo...">
+      </div>
+      <button class="btn btn-primary" onclick="createCategory()">➕ Tạo</button>
+    </div>
+    <div id="cat-list"></div>
+    <div id="cat-empty" class="empty" style="display:none">Chưa có danh mục nào.</div>
+  </div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+const CSRF='{{CSRF_TOKEN}}', BASE='/library-admin/api';
+let categories=[], selectedIds=new Set(), docPage=1, searchTimer=null;
+
+function api(path,opts={}){
+  opts.headers={...opts.headers,'X-CSRFToken':CSRF};
+  if(opts.body&&!(opts.body instanceof FormData)){opts.headers['Content-Type']='application/json';opts.body=JSON.stringify(opts.body)}
+  return fetch(BASE+path,opts).then(r=>r.json());
+}
+function toast(msg,type='success'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+type;setTimeout(()=>el.className='toast',3000)}
+function switchTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.panel').forEach(e=>e.classList.remove('active'));
+  if(t==='docs'){document.querySelectorAll('.tab')[0].classList.add('active');document.getElementById('panel-docs').classList.add('active')}
+  else{document.querySelectorAll('.tab')[1].classList.add('active');document.getElementById('panel-cats').classList.add('active')}}
+
+// ── Documents ──
+function onDocSearch(){clearTimeout(searchTimer);searchTimer=setTimeout(()=>{docPage=1;loadDocs()},300)}
+
+async function loadDocs(){
+  const s=document.getElementById('doc-search').value,cat=document.getElementById('filter-cat').value,ext=document.getElementById('filter-ext').value;
+  let url=`/documents/?page=${docPage}&page_size=50`;
+  if(s)url+=`&search=${encodeURIComponent(s)}`;if(cat)url+=`&category_id=${cat}`;if(ext)url+=`&extension=${ext}`;
+  const{documents,total,page,page_size}=await api(url);
+  const tbody=document.getElementById('doc-tbody'),empty=document.getElementById('doc-empty');
+  selectedIds.clear();updateBulk();
+  if(!documents.length){tbody.innerHTML='';empty.style.display='block';document.getElementById('doc-paging').innerHTML='';return}
+  empty.style.display='none';
+  tbody.innerHTML=documents.map(d=>`<tr>
+    <td><input type="checkbox" class="cb doc-cb" data-id="${d.id}" onchange="onDocCheck()"></td>
+    <td><span class="doc-title" data-id="${d.id}" ondblclick="startEdit(this,'${d.title.replace(/'/g,"\\'")}')" style="font-weight:600;cursor:pointer" title="Double-click để sửa tên">${d.title}</span></td>
+    <td><span class="badge badge-${d.extension}">${d.extension.toUpperCase()}</span></td>
+    <td style="color:#666">${d.file_size_display}</td>
+    <td><select class="btn-xs" onchange="updateCat(${d.id},this.value)" style="font-size:12px;padding:2px 4px;border:1px solid #ddd;border-radius:4px">
+      <option value="">--</option>${categories.map(c=>`<option value="${c.id}"${c.id==d.category_id?' selected':''}>${c.name}</option>`).join('')}
+    </select></td>
+    <td><button class="toggle ${d.is_visible?'on':'off'}" onclick="toggleVis(${d.id},${!d.is_visible})"></button></td>
+    <td style="color:#999;font-size:12px">${d.created_at}</td>
+    <td><button class="btn btn-danger btn-xs" onclick="deleteDoc(${d.id})">🗑</button></td>
+  </tr>`).join('');
+  // Pagination
+  const totalPages=Math.ceil(total/page_size),pg=document.getElementById('doc-paging');
+  if(totalPages<=1){pg.innerHTML=`<span>${total} tài liệu</span>`;return}
+  let btns='';for(let i=1;i<=totalPages;i++){btns+=`<button ${i===page?'class="current"':''} ${i===page?'disabled':''} onclick="docPage=${i};loadDocs()">${i}</button>`}
+  pg.innerHTML=`<span>Trang ${page}/${totalPages} (${total} tài liệu)</span><div class="page-btns">${btns}</div>`;
+}
+
+function startEdit(el,oldTitle){
+  const id=el.dataset.id;
+  el.innerHTML=`<input class="edit-input" value="${oldTitle}" onblur="saveTitle(${id},this)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}" autofocus>`;
+  el.querySelector('input').focus();
+}
+async function saveTitle(id,input){
+  if(input.dataset.cancel==='1'){loadDocs();return}
+  const v=input.value.trim();if(!v){loadDocs();return}
+  await api(`/documents/${id}/`,{method:'PATCH',body:{title:v}});toast('Đã cập nhật tên');loadDocs();
+}
+async function updateCat(id,catId){await api(`/documents/${id}/`,{method:'PATCH',body:{category_id:catId||null}});toast('Đã cập nhật danh mục');loadDocs()}
+async function toggleVis(id,v){await api(`/documents/${id}/`,{method:'PATCH',body:{is_visible:v}});toast(v?'🔓 Hiển thị':'🔒 Đã ẩn');loadDocs()}
+async function deleteDoc(id){if(!confirm('Xóa file này?'))return;await api(`/documents/${id}/`,{method:'DELETE'});toast('Đã xóa');loadDocs()}
+
+// Upload with progress
+document.getElementById('upload-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  const btn=document.getElementById('btn-upload'),bar=document.getElementById('upload-progress'),fill=document.getElementById('upload-fill');
+  const fd=new FormData();
+  fd.append('title',document.getElementById('doc-title').value);
+  fd.append('category_id',document.getElementById('doc-category').value);
+  const files=document.getElementById('doc-file').files;
+  for(let i=0;i<files.length;i++)fd.append('file',files[i]);
+  btn.disabled=true;btn.textContent='⏳ Đang upload...';bar.classList.add('show');fill.style.width='0%';
+  const xhr=new XMLHttpRequest();
+  xhr.upload.onprogress=function(ev){if(ev.lengthComputable)fill.style.width=Math.round(ev.loaded/ev.total*100)+'%'};
+  xhr.onload=function(){
+    btn.disabled=false;btn.textContent='⬆️ Upload';bar.classList.remove('show');
+    const res=JSON.parse(xhr.responseText);
+    if(res.error){toast(res.error,'error');return}
+    let msg=`Upload thành công (${res.created} file)`;if(res.errors)msg+=` — Lỗi: ${res.errors.join(', ')}`;
+    toast(msg);document.getElementById('upload-form').reset();loadDocs();
+  };
+  xhr.onerror=function(){btn.disabled=false;btn.textContent='⬆️ Upload';bar.classList.remove('show');toast('Lỗi kết nối','error')};
+  xhr.open('POST',BASE+'/documents/');xhr.setRequestHeader('X-CSRFToken',CSRF);xhr.send(fd);
+});
+
+// Bulk
+function onDocCheck(){selectedIds.clear();document.querySelectorAll('.doc-cb:checked').forEach(cb=>selectedIds.add(+cb.dataset.id));updateBulk()}
+function toggleSelectAll(el){document.querySelectorAll('.doc-cb').forEach(cb=>{cb.checked=el.checked});onDocCheck()}
+function updateBulk(){const bar=document.getElementById('bulk-bar');bar.classList.toggle('show',selectedIds.size>0);document.getElementById('bulk-count').textContent=selectedIds.size+' đã chọn'}
+async function bulkAction(a){if(!selectedIds.size)return;await api('/documents/bulk/',{method:'POST',body:{ids:[...selectedIds],action:a}});toast(a==='show'?`🔓 Hiển thị ${selectedIds.size} file`:`🔒 Ẩn ${selectedIds.size} file`);loadDocs()}
+
+// ── Categories ──
+async function loadCategories(){
+  const{categories:cats}=await api('/categories/');categories=cats;
+  const sel=document.getElementById('doc-category'),fcat=document.getElementById('filter-cat');
+  const opts=cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  sel.innerHTML='<option value="">-- Chọn --</option>'+opts;
+  fcat.innerHTML='<option value="">Tất cả danh mục</option>'+opts;
+  const list=document.getElementById('cat-list'),empty=document.getElementById('cat-empty');
+  if(!cats.length){list.innerHTML='';empty.style.display='block';return}
+  empty.style.display='none';
+  list.innerHTML=cats.map(c=>`<div class="cat-item"><div><span>${c.name}</span><span class="cat-count">${c.doc_count} tài liệu</span></div>
+    <button class="btn btn-danger btn-sm" onclick="deleteCat(${c.id},'${c.name.replace(/'/g,"\\'")}')">🗑 Xóa</button></div>`).join('');
+}
+async function createCategory(){const input=document.getElementById('cat-name'),name=input.value.trim();if(!name){toast('Nhập tên','error');return}
+  const res=await api('/categories/',{method:'POST',body:{name}});if(res.error){toast(res.error,'error');return}toast('Tạo thành công!');input.value='';loadCategories()}
+async function deleteCat(id,name){if(!confirm(`Xóa "${name}"?`))return;await api(`/categories/${id}/`,{method:'DELETE'});toast('Đã xóa');loadCategories()}
+
+loadCategories().then(loadDocs);
+</script>
+</body>
+</html>

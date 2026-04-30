@@ -52,6 +52,9 @@ LIBRARY_KEY_PATTERN = r'(?P<library_key_string>library-v1:[^/+]+\+[^/+]+)'
 urlpatterns = oauth2_urlpatterns + [
     path('', include('openedx.core.djangoapps.user_authn.urls_common')),
     path('', include('common.djangoapps.student.urls')),
+
+    # LANDA Library — trang quản lý Thư viện tài liệu trên Studio
+    path('library-admin/', include('lms.djangoapps.landa_library.cms_urls')),
     path('transcripts/upload', contentstore_views.upload_transcripts, name='upload_transcripts'),
     path('transcripts/download', contentstore_views.download_transcripts, name='download_transcripts'),
     path('transcripts/check', contentstore_views.check_transcripts, name='check_transcripts'),

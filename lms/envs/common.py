@@ -2384,6 +2384,9 @@ INSTALLED_APPS = [
     "openedx_learning.apps.authoring.units",
     "openedx_learning.apps.authoring.subsections",
     "openedx_learning.apps.authoring.sections",
+
+    # LANDA Library — Kho tài liệu nội bộ
+    'lms.djangoapps.landa_library',
 ]
 
 ######################### Django Rest Framework ########################

@@ -505,6 +505,9 @@ MIDDLEWARE = [
     'openedx.core.djangoapps.site_configuration.middleware.SessionCookieDomainOverrideMiddleware',
 ]
 
+# LANDA Library — nút "📚 Thư viện" trên mọi trang CMS
+MIDDLEWARE.append('lms.djangoapps.landa_library.middleware.LibraryButtonMiddleware')
+
 EXTRA_MIDDLEWARE_CLASSES = []
 
 ############# XBlock Configuration ##########
@@ -1190,6 +1193,9 @@ INSTALLED_APPS = [
     "openedx_learning.apps.authoring.units",
     "openedx_learning.apps.authoring.subsections",
     "openedx_learning.apps.authoring.sections",
+
+    # LANDA Library — Kho tài liệu nội bộ (cần cho Django Admin trên CMS)
+    'lms.djangoapps.landa_library',
 ]
 
 
