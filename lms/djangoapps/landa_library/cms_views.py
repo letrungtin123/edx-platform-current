@@ -74,7 +74,12 @@ def documents_api(request):
         if ext not in ALLOWED_EXTENSIONS:
             errors.append(f"'{f.name}': đuôi .{ext} không hỗ trợ")
             continue
-        doc_title = title if len(files) == 1 else (title or os.path.splitext(f.name)[0])
+        # Luôn fallback về tên file gốc nếu không nhập title
+        doc_title = title or os.path.splitext(f.name)[0]
+        # Nếu có nhiều file và user nhập title, ghép title với tên file
+        if len(files) > 1 and title:
+            doc_title = f"{title} - {os.path.splitext(f.name)[0]}"
+            
         doc = LibraryDocument(title=doc_title, file=f, uploaded_by=request.user)
         if category_id:
             try:
