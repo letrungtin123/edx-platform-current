@@ -120,6 +120,11 @@ tr:hover td{background:#f8fbff}
       <span id="bulk-count">0 đã chọn</span>
       <button class="btn btn-success btn-sm" onclick="bulkAction('show')">🔓 Hiển thị</button>
       <button class="btn btn-outline btn-sm" onclick="bulkAction('hide')">🔒 Ẩn</button>
+      <span style="border-left:2px solid #b3d7f0;height:24px;margin:0 4px"></span>
+      <select id="bulk-cat" style="padding:4px 8px;border:1px solid #ddd;border-radius:6px;font-size:13px">
+        <option value="">📁 Gán danh mục…</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="bulkSetCategory()">✔ Áp dụng</button>
     </div>
 
     <table>
@@ -145,6 +150,11 @@ tr:hover td{background:#f8fbff}
       </div>
       <button class="btn btn-primary" onclick="createCategory()">➕ Tạo</button>
     </div>
+    <div id="cat-bulk-bar" class="bulk-bar">
+      <input type="checkbox" class="cb" id="cat-select-all" onchange="toggleSelectAllCats(this)">
+      <span id="cat-bulk-count">0 đã chọn</span>
+      <button class="btn btn-danger btn-sm" onclick="bulkDeleteCats()">🗑 Xóa đã chọn</button>
+    </div>
     <div id="cat-list"></div>
     <div id="cat-empty" class="empty" style="display:none">Chưa có danh mục nào.</div>
   </div>
@@ -153,7 +163,7 @@ tr:hover td{background:#f8fbff}
 
 <script>
 const CSRF='{{CSRF_TOKEN}}', BASE='/library-admin/api';
-let categories=[], selectedIds=new Set(), docPage=1, searchTimer=null;
+let categories=[], selectedIds=new Set(), selectedCatIds=new Set(), docPage=1, searchTimer=null;
 
 function api(path,opts={}){
   opts.headers={...opts.headers,'X-CSRFToken':CSRF};
@@ -239,23 +249,57 @@ function onDocCheck(){selectedIds.clear();document.querySelectorAll('.doc-cb:che
 function toggleSelectAll(el){document.querySelectorAll('.doc-cb').forEach(cb=>{cb.checked=el.checked});onDocCheck()}
 function updateBulk(){const bar=document.getElementById('bulk-bar');bar.classList.toggle('show',selectedIds.size>0);document.getElementById('bulk-count').textContent=selectedIds.size+' đã chọn'}
 async function bulkAction(a){if(!selectedIds.size)return;await api('/documents/bulk/',{method:'POST',body:{ids:[...selectedIds],action:a}});toast(a==='show'?`🔓 Hiển thị ${selectedIds.size} file`:`🔒 Ẩn ${selectedIds.size} file`);loadDocs()}
+async function bulkSetCategory(){if(!selectedIds.size){toast('Chưa chọn file nào','error');return}const catId=document.getElementById('bulk-cat').value;if(!catId){toast('Chọn danh mục trước','error');return}const catName=document.getElementById('bulk-cat').selectedOptions[0].text;const cnt=selectedIds.size;await api('/documents/bulk/',{method:'POST',body:{ids:[...selectedIds],action:'set_category',category_id:catId}});toast(`📁 Đã gán "${catName}" cho ${cnt} file`);document.getElementById('bulk-cat').value='';loadDocs()}
 
 // ── Categories ──
 async function loadCategories(){
   const{categories:cats}=await api('/categories/');categories=cats;
-  const sel=document.getElementById('doc-category'),fcat=document.getElementById('filter-cat');
+  const sel=document.getElementById('doc-category'),fcat=document.getElementById('filter-cat'),bcat=document.getElementById('bulk-cat');
   const opts=cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   sel.innerHTML='<option value="">-- Chọn --</option>'+opts;
   fcat.innerHTML='<option value="">Tất cả danh mục</option>'+opts;
+  bcat.innerHTML='<option value="">📁 Gán danh mục…</option>'+opts;
   const list=document.getElementById('cat-list'),empty=document.getElementById('cat-empty');
+  selectedCatIds.clear();updateCatBulk();
   if(!cats.length){list.innerHTML='';empty.style.display='block';return}
   empty.style.display='none';
-  list.innerHTML=cats.map(c=>`<div class="cat-item"><div><span>${c.name}</span><span class="cat-count">${c.doc_count} tài liệu</span></div>
-    <button class="btn btn-danger btn-sm" onclick="deleteCat(${c.id},'${c.name.replace(/'/g,"\\'")}')">🗑 Xóa</button></div>`).join('');
+  list.innerHTML=cats.map(c=>`<div class="cat-item">
+    <div style="display:flex;align-items:center;gap:10px">
+      <input type="checkbox" class="cb cat-cb" data-id="${c.id}" onchange="onCatCheck()">
+      <span class="cat-name-label" data-id="${c.id}" ondblclick="startEditCat(this,'${c.name.replace(/'/g,"\\'")}')"
+        style="cursor:pointer" title="Double-click để sửa tên">${c.name}</span>
+      <span class="cat-count">${c.doc_count} tài liệu</span>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-outline btn-sm" onclick="startEditCat(this.closest('.cat-item').querySelector('.cat-name-label'),'${c.name.replace(/'/g,"\\\'")}')">✏ Sửa</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(${c.id},'${c.name.replace(/'/g,"\\\'")}')">🗑 Xóa</button>
+    </div>
+  </div>`).join('');
 }
+
+// Cat inline edit
+function startEditCat(el,oldName){
+  const id=el.dataset.id;
+  el.innerHTML=`<input class="edit-input" value="${oldName}" onblur="saveCatName(${id},this)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}" autofocus>`;
+  el.querySelector('input').focus();
+}
+async function saveCatName(id,input){
+  if(input.dataset.cancel==='1'){loadCategories();return}
+  const v=input.value.trim();if(!v){loadCategories();return}
+  const res=await api(`/categories/${id}/`,{method:'PATCH',body:{name:v}});
+  if(res.error){toast(res.error,'error');loadCategories();return}
+  toast('Đã cập nhật tên danh mục');loadCategories().then(loadDocs);
+}
+
+// Cat bulk select
+function onCatCheck(){selectedCatIds.clear();document.querySelectorAll('.cat-cb:checked').forEach(cb=>selectedCatIds.add(+cb.dataset.id));updateCatBulk()}
+function toggleSelectAllCats(el){document.querySelectorAll('.cat-cb').forEach(cb=>{cb.checked=el.checked});onCatCheck()}
+function updateCatBulk(){const bar=document.getElementById('cat-bulk-bar');bar.classList.toggle('show',selectedCatIds.size>0);document.getElementById('cat-bulk-count').textContent=selectedCatIds.size+' đã chọn'}
+async function bulkDeleteCats(){if(!selectedCatIds.size)return;if(!confirm(`Xóa ${selectedCatIds.size} danh mục đã chọn?`))return;await api('/categories/bulk/',{method:'POST',body:{ids:[...selectedCatIds],action:'delete'}});toast(`Đã xóa ${selectedCatIds.size} danh mục`);loadCategories().then(loadDocs)}
+
 async function createCategory(){const input=document.getElementById('cat-name'),name=input.value.trim();if(!name){toast('Nhập tên','error');return}
-  const res=await api('/categories/',{method:'POST',body:{name}});if(res.error){toast(res.error,'error');return}toast('Tạo thành công!');input.value='';loadCategories()}
-async function deleteCat(id,name){if(!confirm(`Xóa "${name}"?`))return;await api(`/categories/${id}/`,{method:'DELETE'});toast('Đã xóa');loadCategories()}
+  const res=await api('/categories/',{method:'POST',body:{name}});if(res.error){toast(res.error,'error');return}toast('Tạo thành công!');input.value='';loadCategories().then(loadDocs)}
+async function deleteCat(id,name){if(!confirm(`Xóa "${name}"?`))return;await api(`/categories/${id}/`,{method:'DELETE'});toast('Đã xóa');loadCategories().then(loadDocs)}
 
 loadCategories().then(loadDocs);
 </script>

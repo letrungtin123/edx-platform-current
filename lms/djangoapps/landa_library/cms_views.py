@@ -130,8 +130,20 @@ def document_bulk_api(request):
     data = json.loads(request.body)
     ids = data.get('ids', [])
     action = data.get('action')
-    if not ids or action not in ('show', 'hide'):
+    if not ids or action not in ('show', 'hide', 'set_category'):
         return JsonResponse({'error': 'Invalid'}, status=400)
+
+    if action == 'set_category':
+        cat_id = data.get('category_id')
+        category = None
+        if cat_id:
+            try:
+                category = DocumentCategory.objects.get(id=int(cat_id))
+            except (DocumentCategory.DoesNotExist, ValueError):
+                return JsonResponse({'error': 'Danh mục không tồn tại'}, status=400)
+        updated = LibraryDocument.objects.filter(id__in=ids).update(category=category)
+        return JsonResponse({'success': True, 'updated': updated})
+
     updated = LibraryDocument.objects.filter(id__in=ids).update(is_visible=(action == 'show'))
     return JsonResponse({'success': True, 'updated': updated})
 
@@ -155,14 +167,38 @@ def categories_api(request):
 
 
 @staff_member_required
-@require_http_methods(["DELETE"])
+@require_http_methods(["PATCH", "DELETE"])
 def category_detail_api(request, cat_id):
     try:
         cat = DocumentCategory.objects.get(id=cat_id)
     except DocumentCategory.DoesNotExist:
         return JsonResponse({'error': 'Không tìm thấy'}, status=404)
-    cat.delete()
+    if request.method == "DELETE":
+        cat.delete()
+        return JsonResponse({'success': True})
+    # PATCH — đổi tên danh mục
+    data = json.loads(request.body)
+    name = data.get('name', '').strip()
+    if not name:
+        return JsonResponse({'error': 'Tên trống'}, status=400)
+    if DocumentCategory.objects.filter(name=name).exclude(id=cat_id).exists():
+        return JsonResponse({'error': f'"{name}" đã tồn tại'}, status=400)
+    cat.name = name
+    cat.slug = slugify(name, allow_unicode=True)
+    cat.save()
     return JsonResponse({'success': True})
+
+
+@staff_member_required
+@require_http_methods(["POST"])
+def category_bulk_api(request):
+    data = json.loads(request.body)
+    ids = data.get('ids', [])
+    action = data.get('action')
+    if not ids or action != 'delete':
+        return JsonResponse({'error': 'Invalid'}, status=400)
+    deleted, _ = DocumentCategory.objects.filter(id__in=ids).delete()
+    return JsonResponse({'success': True, 'deleted': deleted})
 
 
 # ══════════════════════════════════════════════

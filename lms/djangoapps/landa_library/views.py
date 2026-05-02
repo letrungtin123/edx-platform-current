@@ -16,6 +16,7 @@ Auth: JWT hoặc Session — user phải đăng nhập.
 import logging
 import os
 
+from django.contrib.auth import authenticate
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404
 from edx_rest_framework_extensions.auth.jwt.authentication import JwtAuthentication
@@ -197,3 +198,90 @@ def document_download(request, doc_id):
         filename=filename,
     )
     return response
+
+
+# ── Password Change API ──
+
+@api_view(['POST'])
+@authentication_classes([
+    JwtAuthentication,
+    BearerAuthenticationAllowInactiveUser,
+    SessionAuthenticationAllowInactiveUser,
+])
+@permission_classes([permissions.IsAuthenticated])
+def change_password(request):
+    """
+    POST /api/landa/v1/account/change-password/
+
+    Đổi mật khẩu trực tiếp cho user đã login.
+    Không cần email — verify mật khẩu cũ → set mật khẩu mới.
+
+    Request body (JSON):
+        {
+            "current_password": "old_password",
+            "new_password": "new_secure_password"
+        }
+
+    Responses:
+        200: Đổi mật khẩu thành công
+        400: Thiếu field hoặc mật khẩu mới không hợp lệ
+        403: Mật khẩu hiện tại không đúng
+    """
+    current_password = request.data.get('current_password', '').strip()
+    new_password = request.data.get('new_password', '').strip()
+
+    if not current_password or not new_password:
+        return Response(
+            {'success': False, 'message': 'Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Verify mật khẩu hiện tại
+    user = authenticate(
+        username=request.user.username,
+        password=current_password,
+        request=request,
+    )
+    if user is None:
+        return Response(
+            {'success': False, 'message': 'Mật khẩu hiện tại không đúng.'},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Validate mật khẩu mới theo policy Open edX
+    try:
+        from openedx.core.djangoapps.user_api.accounts.api import get_password_validation_error
+        validation_error = get_password_validation_error(
+            new_password,
+            username=user.username,
+            email=user.email,
+        )
+        if validation_error:
+            return Response(
+                {'success': False, 'message': str(validation_error)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    except ImportError:
+        # Fallback: kiểm tra độ dài tối thiểu nếu không import được
+        if len(new_password) < 8:
+            return Response(
+                {'success': False, 'message': 'Mật khẩu mới phải có ít nhất 8 ký tự.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    if current_password == new_password:
+        return Response(
+            {'success': False, 'message': 'Mật khẩu mới phải khác mật khẩu hiện tại.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Set mật khẩu mới
+    user.set_password(new_password)
+    user.save()
+
+    log.info("User %s changed password successfully via LANDA API.", user.username)
+
+    return Response({
+        'success': True,
+        'message': 'Đổi mật khẩu thành công.',
+    })
