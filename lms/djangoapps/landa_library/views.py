@@ -10,15 +10,25 @@ GET /api/landa/v1/library/categories/
 GET /api/landa/v1/library/download/<id>/
     → Download file (protected — yêu cầu đăng nhập)
 
-Auth: JWT hoặc Session — user phải đăng nhập.
+POST /api/landa/v1/account/send-welcome-email/
+    → Gửi email chào mừng chứa thông tin tài khoản cho user mới đăng ký qua Google
+
+Auth: JWT hoặc Session — user phải đăng nhập (trừ send-welcome-email).
 """
 
 import logging
 import os
+import secrets
+import string
+from datetime import datetime
 
+from django.conf import settings
 from django.contrib.auth import authenticate
+from django.core.mail import EmailMultiAlternatives
 from django.db.models import Count, Q
 from django.http import FileResponse, Http404
+from django.template.loader import render_to_string
+from django.views.decorators.csrf import csrf_exempt
 from edx_rest_framework_extensions.auth.jwt.authentication import JwtAuthentication
 from edx_rest_framework_extensions.auth.session.authentication import (
     SessionAuthenticationAllowInactiveUser,
@@ -285,3 +295,6 @@ def change_password(request):
         'success': True,
         'message': 'Đổi mật khẩu thành công.',
     })
+
+
+

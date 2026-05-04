@@ -505,8 +505,8 @@ MIDDLEWARE = [
     'openedx.core.djangoapps.site_configuration.middleware.SessionCookieDomainOverrideMiddleware',
 ]
 
-# LANDA Library — nút "📚 Thư viện" trên mọi trang CMS
-MIDDLEWARE.append('lms.djangoapps.landa_library.middleware.LibraryButtonMiddleware')
+
+
 
 EXTRA_MIDDLEWARE_CLASSES = []
 

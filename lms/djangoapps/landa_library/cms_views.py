@@ -1,13 +1,13 @@
 """
-cms_views.py — CMS Studio views cho LANDA Library Admin
-Trang quản lý tại: http://studio.local.openedx.io/library-admin/
+cms_views.py — CMS Studio views cho LANDA Admin
+Trang quản lý tại: http://studio.local.openedx.io/landa-admin/
 """
 import json
 import logging
 import os
 
 from django.contrib.admin.views.decorators import staff_member_required
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.middleware.csrf import get_token
 from django.template.defaultfilters import filesizeformat
@@ -17,11 +17,12 @@ from django.views.decorators.http import require_http_methods
 
 from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument
 from lms.djangoapps.landa_library.validators import ALLOWED_EXTENSIONS, get_file_extension
+from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
 
 log = logging.getLogger(__name__)
 
 # ══════════════════════════════════════════════
-# API Endpoints (AJAX) — dùng cho CMS admin page
+# Library API Endpoints (AJAX) — dùng cho CMS admin page
 # ══════════════════════════════════════════════
 
 @staff_member_required
@@ -202,6 +203,128 @@ def category_bulk_api(request):
 
 
 # ══════════════════════════════════════════════
+# Course Admin API — quản lý visibility + tên khóa học
+# ══════════════════════════════════════════════
+
+@staff_member_required
+@require_http_methods(["GET"])
+def courses_api(request):
+    """
+    GET /landa-admin/api/courses/
+    Query params: page, page_size, search, visibility (all|staff_only|public)
+    """
+    qs = CourseOverview.objects.all().order_by('-modified')
+
+    # Search theo display_name hoặc course id
+    search = request.GET.get('search', '').strip()
+    if search:
+        qs = qs.filter(Q(display_name__icontains=search) | Q(id__icontains=search))
+
+    # Filter visibility
+    visibility = request.GET.get('visibility', 'all')
+    if visibility == 'staff_only':
+        qs = qs.filter(visible_to_staff_only=True)
+    elif visibility == 'public':
+        qs = qs.filter(visible_to_staff_only=False)
+
+    # Pagination
+    page = int(request.GET.get('page', 1))
+    page_size = min(int(request.GET.get('page_size', 20)), 100)
+    total = qs.count()
+    offset = (page - 1) * page_size
+    courses = qs[offset:offset + page_size]
+
+    data = []
+    for c in courses:
+        data.append({
+            'id': str(c.id),
+            'display_name': c.display_name,
+            'org': c.org,
+            'visible_to_staff_only': c.visible_to_staff_only,
+            'start': c.start.strftime('%d/%m/%Y') if c.start else '-',
+            'end': c.end.strftime('%d/%m/%Y') if c.end else '-',
+            'created': c.created.strftime('%d/%m/%Y %H:%M') if c.created else '',
+            'modified': c.modified.strftime('%d/%m/%Y %H:%M') if c.modified else '',
+        })
+
+    return JsonResponse({
+        'courses': data,
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+    })
+
+
+@staff_member_required
+@require_http_methods(["PATCH"])
+def course_detail_api(request, course_id):
+    """
+    PATCH /landa-admin/api/courses/<course_id>/
+    Body: { "visible_to_staff_only": true/false, "display_name": "..." }
+    """
+    from opaque_keys.edx.keys import CourseKey
+    try:
+        key = CourseKey.from_string(course_id)
+        course = CourseOverview.objects.get(id=key)
+    except Exception:
+        return JsonResponse({'error': 'Không tìm thấy khóa học'}, status=404)
+
+    data = json.loads(request.body)
+    changed = False
+
+    if 'visible_to_staff_only' in data:
+        course.visible_to_staff_only = bool(data['visible_to_staff_only'])
+        changed = True
+
+    if 'display_name' in data and data['display_name'].strip():
+        course.display_name = data['display_name'].strip()
+        changed = True
+
+    if changed:
+        course.save()
+        log.info(
+            "LANDA Admin: user %s updated course %s — visible_to_staff_only=%s, display_name=%s",
+            request.user.username, course_id,
+            course.visible_to_staff_only, course.display_name,
+        )
+
+    return JsonResponse({'success': True})
+
+
+@staff_member_required
+@require_http_methods(["POST"])
+def course_bulk_api(request):
+    """
+    POST /landa-admin/api/courses-bulk/
+    Body: { "ids": ["course-v1:..."], "action": "staff_only" | "public" }
+    """
+    from opaque_keys.edx.keys import CourseKey
+    data = json.loads(request.body)
+    ids = data.get('ids', [])
+    action = data.get('action')
+
+    if not ids or action not in ('staff_only', 'public'):
+        return JsonResponse({'error': 'Invalid'}, status=400)
+
+    keys = []
+    for cid in ids:
+        try:
+            keys.append(CourseKey.from_string(cid))
+        except Exception:
+            pass
+
+    new_value = (action == 'staff_only')
+    updated = CourseOverview.objects.filter(id__in=keys).update(visible_to_staff_only=new_value)
+
+    log.info(
+        "LANDA Admin: user %s bulk set %d courses visible_to_staff_only=%s",
+        request.user.username, updated, new_value,
+    )
+
+    return JsonResponse({'success': True, 'updated': updated})
+
+
+# ══════════════════════════════════════════════
 # Main Page — load HTML từ file template
 # ══════════════════════════════════════════════
 
@@ -211,7 +334,7 @@ def library_admin_page(request):
     csrf_token = get_token(request)
     allowed_ext = ', '.join(sorted(ALLOWED_EXTENSIONS))
     accept_attr = ','.join(f'.{e}' for e in sorted(ALLOWED_EXTENSIONS))
-    html_path = os.path.join(os.path.dirname(__file__), 'templates', 'library_admin.html')
+    html_path = os.path.join(os.path.dirname(__file__), 'templates', 'landa-admin.html')
     with open(html_path, 'r', encoding='utf-8') as f:
         html = f.read()
     html = html.replace('{{CSRF_TOKEN}}', csrf_token)

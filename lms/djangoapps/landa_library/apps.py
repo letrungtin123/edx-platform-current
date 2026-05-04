@@ -9,3 +9,6 @@ class LandaLibraryConfig(AppConfig):
     name = 'lms.djangoapps.landa_library'
     verbose_name = 'LANDA Library'
     default_auto_field = 'django.db.models.BigAutoField'
+
+    def ready(self):
+        import lms.djangoapps.landa_library.signals

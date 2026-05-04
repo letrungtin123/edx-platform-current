@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Quản lý Thư viện — Studio</title>
+<title>LANDA Admin — Studio</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#333}
@@ -66,12 +66,13 @@ tr:hover td{background:#f8fbff}
 <body>
 <div class="header">
   <a href="/">← Studio</a>
-  <h1>📚 Quản lý Thư viện Tài liệu</h1>
+  <h1>⚙️ LANDA Admin</h1>
 </div>
 <div class="container">
   <div class="tabs">
     <button class="tab active" onclick="switchTab('docs')">📄 Tài liệu</button>
     <button class="tab" onclick="switchTab('cats')">📁 Danh mục</button>
+    <button class="tab" onclick="switchTab('courses')">🎓 Khóa học</button>
   </div>
 
   <!-- TAB: Tài liệu -->
@@ -158,11 +159,47 @@ tr:hover td{background:#f8fbff}
     <div id="cat-list"></div>
     <div id="cat-empty" class="empty" style="display:none">Chưa có danh mục nào.</div>
   </div>
+
+  <!-- TAB: Khóa học -->
+  <div id="panel-courses" class="panel">
+    <div class="toolbar">
+      <input class="search-input" id="course-search" placeholder="🔍 Tìm theo tên / ID..." oninput="onCourseSearch()">
+      <select id="filter-visibility" onchange="coursePage=1; loadCourses()" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px">
+        <option value="all">Tất cả</option>
+        <option value="public">🌐 Public</option>
+        <option value="staff_only">🔒 Staff Only</option>
+      </select>
+      <div style="flex:1"></div>
+      <select id="course-page-size" onchange="coursePage=1; loadCourses()" style="padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px">
+        <option value="10">10 / trang</option>
+        <option value="20" selected>20 / trang</option>
+        <option value="50">50 / trang</option>
+      </select>
+    </div>
+
+    <div id="course-bulk-bar" class="bulk-bar">
+      <input type="checkbox" class="cb" id="course-select-all" onchange="toggleSelectAllCourses(this)">
+      <span id="course-bulk-count">0 đã chọn</span>
+      <button class="btn btn-outline btn-sm" onclick="bulkCourseAction('public')">🌐 Set Public</button>
+      <button class="btn btn-danger btn-sm" onclick="bulkCourseAction('staff_only')">🔒 Set Staff Only</button>
+    </div>
+
+    <table>
+      <thead><tr>
+        <th style="width:30px"><input type="checkbox" class="cb" id="course-th-cb" onchange="toggleSelectAllCourses(this)"></th>
+        <th>Tên khóa học</th><th style="width:100px">Org</th><th style="width:100px">Visibility</th>
+        <th style="width:100px">Bắt đầu</th><th style="width:100px">Cập nhật</th>
+      </tr></thead>
+      <tbody id="course-tbody"></tbody>
+    </table>
+    <div id="course-empty" class="empty" style="display:none">Chưa có khóa học nào.</div>
+    <div id="course-paging" class="page-info"></div>
+  </div>
 </div>
 <div id="toast" class="toast"></div>
 
 <script>
-const CSRF='{{CSRF_TOKEN}}', BASE='/library-admin/api';
+const CSRF='{{CSRF_TOKEN}}', BASE='/landa-admin/api';
 let categories=[], selectedIds=new Set(), selectedCatIds=new Set(), docPage=1, searchTimer=null;
 
 function api(path,opts={}){
@@ -172,8 +209,10 @@ function api(path,opts={}){
 }
 function toast(msg,type='success'){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+type;setTimeout(()=>el.className='toast',3000)}
 function switchTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.panel').forEach(e=>e.classList.remove('active'));
-  if(t==='docs'){document.querySelectorAll('.tab')[0].classList.add('active');document.getElementById('panel-docs').classList.add('active')}
-  else{document.querySelectorAll('.tab')[1].classList.add('active');document.getElementById('panel-cats').classList.add('active')}}
+  const idx={docs:0,cats:1,courses:2}[t]||0;
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('panel-'+t).classList.add('active');
+  if(t==='courses'&&!coursesLoaded){loadCourses();coursesLoaded=true;}}
 
 // ── Documents ──
 function onDocSearch(){clearTimeout(searchTimer);searchTimer=setTimeout(()=>{docPage=1;loadDocs()},300)}
@@ -302,6 +341,60 @@ async function createCategory(){const input=document.getElementById('cat-name'),
 async function deleteCat(id,name){if(!confirm(`Xóa "${name}"?`))return;await api(`/categories/${id}/`,{method:'DELETE'});toast('Đã xóa');loadCategories().then(loadDocs)}
 
 loadCategories().then(loadDocs);
+
+// ══════════════════════════════════
+// Courses Tab
+// ══════════════════════════════════
+let coursePage=1, courseSearchTimer=null, selectedCourseIds=new Set(), coursesLoaded=false;
+
+function onCourseSearch(){clearTimeout(courseSearchTimer);courseSearchTimer=setTimeout(()=>{coursePage=1;loadCourses()},300)}
+
+async function loadCourses(){
+  const s=document.getElementById('course-search').value;
+  const vis=document.getElementById('filter-visibility').value;
+  const pSize=document.getElementById('course-page-size').value;
+  let url=`/courses/?page=${coursePage}&page_size=${pSize}&visibility=${vis}`;
+  if(s)url+=`&search=${encodeURIComponent(s)}`;
+  const{courses,total,page,page_size}=await api(url);
+  const tbody=document.getElementById('course-tbody'),empty=document.getElementById('course-empty');
+  selectedCourseIds.clear();updateCourseBulk();
+  if(!courses.length){tbody.innerHTML='';empty.style.display='block';document.getElementById('course-paging').innerHTML='';return}
+  empty.style.display='none';
+  tbody.innerHTML=courses.map(c=>`<tr>
+    <td><input type="checkbox" class="cb course-cb" data-id="${c.id}" onchange="onCourseCheck()"></td>
+    <td><span class="course-name" data-id="${c.id}" ondblclick="startEditCourse(this,'${c.display_name.replace(/'/g,"\\'")}')"
+      style="font-weight:600;cursor:pointer" title="Double-click để sửa tên">${c.display_name}</span></td>
+    <td style="color:#666;font-size:13px">${c.org}</td>
+    <td><button class="toggle ${c.visible_to_staff_only?'off':'on'}" onclick="toggleCourseVis('${c.id}',${!c.visible_to_staff_only})" title="${c.visible_to_staff_only?'Staff Only — click để Public':'Public — click để Staff Only'}"></button>
+      <span style="font-size:11px;color:${c.visible_to_staff_only?'#dc3545':'#198754'}">${c.visible_to_staff_only?'🔒 Staff':'🌐 Public'}</span></td>
+    <td style="color:#999;font-size:12px">${c.start}</td>
+    <td style="color:#999;font-size:12px">${c.modified}</td>
+  </tr>`).join('');
+  const totalPages=Math.ceil(total/page_size),pg=document.getElementById('course-paging');
+  if(totalPages<=1){pg.innerHTML=`<span>${total} khóa học</span>`;return}
+  let btns='';for(let i=1;i<=totalPages;i++){btns+=`<button ${i===page?'class="current"':''} ${i===page?'disabled':''} onclick="coursePage=${i};loadCourses()">${i}</button>`}
+  pg.innerHTML=`<span>Trang ${page}/${totalPages} (${total} khóa học)</span><div class="page-btns">${btns}</div>`;
+}
+
+function startEditCourse(el,oldName){
+  const id=el.dataset.id;
+  el.innerHTML=`<input class="edit-input" value="${oldName}" onblur="saveCourseName('${id}',this)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.dataset.cancel='1';this.blur()}" autofocus>`;
+  el.querySelector('input').focus();
+}
+async function saveCourseName(id,input){
+  if(input.dataset.cancel==='1'){loadCourses();return}
+  const v=input.value.trim();if(!v){loadCourses();return}
+  await api(`/courses/${id}/`,{method:'PATCH',body:{display_name:v}});toast('Đã cập nhật tên khóa học');loadCourses();
+}
+async function toggleCourseVis(id,staffOnly){
+  await api(`/courses/${id}/`,{method:'PATCH',body:{visible_to_staff_only:staffOnly}});
+  toast(staffOnly?'🔒 Đã set Staff Only':'🌐 Đã set Public');loadCourses();
+}
+
+function onCourseCheck(){selectedCourseIds.clear();document.querySelectorAll('.course-cb:checked').forEach(cb=>selectedCourseIds.add(cb.dataset.id));updateCourseBulk()}
+function toggleSelectAllCourses(el){document.querySelectorAll('.course-cb').forEach(cb=>{cb.checked=el.checked});onCourseCheck()}
+function updateCourseBulk(){const bar=document.getElementById('course-bulk-bar');bar.classList.toggle('show',selectedCourseIds.size>0);document.getElementById('course-bulk-count').textContent=selectedCourseIds.size+' đã chọn'}
+async function bulkCourseAction(a){if(!selectedCourseIds.size)return;await api('/courses-bulk/',{method:'POST',body:{ids:[...selectedCourseIds],action:a}});toast(a==='staff_only'?`🔒 ${selectedCourseIds.size} khóa học → Staff Only`:`🌐 ${selectedCourseIds.size} khóa học → Public`);loadCourses()}
 </script>
 </body>
 </html>

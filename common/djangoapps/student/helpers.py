@@ -735,15 +735,25 @@ def do_create_account(form, custom_form=None):
         "name", "level_of_education", "gender", "mailing_address", "city", "country", "goals",
         "year_of_birth"
     ]
-    profile = UserProfile(
-        user=user,
-        **{key: form.cleaned_data.get(key) for key in profile_fields}
-    )
+    profile_data = {key: form.cleaned_data.get(key) for key in profile_fields}
     extended_profile = form.cleaned_extended_profile
-    if extended_profile:
-        profile.meta = json.dumps(extended_profile)
+
+    # user_post_save_callback signal may have already created a bare profile
+    # for this user. Use get_or_create to avoid IntegrityError on duplicate user_id.
     try:
-        profile.save()
+        profile, created = UserProfile.objects.get_or_create(
+            user=user,
+            defaults=profile_data,
+        )
+        if not created:
+            # Profile existed (from signal) — update it with registration data
+            for key, value in profile_data.items():
+                if value:
+                    setattr(profile, key, value)
+            profile.save()
+        if extended_profile:
+            profile.meta = json.dumps(extended_profile)
+            profile.save(update_fields=['meta'])
     except Exception:
         log.exception(f"UserProfile creation failed for user {user.id}.")
         raise

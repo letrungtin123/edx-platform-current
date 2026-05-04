@@ -26,10 +26,10 @@ class LibraryButtonMiddleware:
   cursor:pointer;transition:all .3s ease;text-decoration:none;
 " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 20px rgba(0,117,180,.5)'"
   onmouseout="this.style.transform='';this.style.boxShadow='0 4px 16px rgba(0,117,180,.4)'"
-  onclick="window.location.href='/library-admin/'"
+  onclick="window.location.href='/landa-admin/'"
 >
   <span style="font-size:18px">&#128218;</span>
-  <span>Thu vien tai lieu</span>
+  <span>LANDA Admin</span>
 </div>
 '''
 
@@ -44,8 +44,8 @@ class LibraryButtonMiddleware:
         if 'text/html' not in content_type:
             return response
 
-        # Không inject vào chính trang library-admin (đã có header riêng)
-        if request.path.startswith('/library-admin'):
+        # Không inject vào chính trang landa-admin (đã có header riêng)
+        if request.path.startswith('/landa-admin'):
             return response
 
         # Chỉ inject cho staff

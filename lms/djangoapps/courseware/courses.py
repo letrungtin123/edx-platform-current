@@ -928,8 +928,13 @@ def get_courses(user, org=None, filter_=None, permissions=None, active_only=Fals
     )
     permissions.add(permission_name)
 
+    # LANDA: non-staff users không được thấy courses có visible_to_staff_only=True
+    is_global_staff = getattr(user, 'is_staff', False) or getattr(user, 'is_superuser', False)
+
     return LazySequence(
-        (c for c in courses if all(has_access(user, p, c) for p in permissions)),
+        (c for c in courses if
+            (is_global_staff or not getattr(c, 'visible_to_staff_only', False)) and
+            all(has_access(user, p, c) for p in permissions)),
         est_len=courses.count()
     )
 
