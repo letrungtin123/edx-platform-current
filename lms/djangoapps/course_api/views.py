@@ -544,21 +544,26 @@ class CourseMentorsView(DeveloperErrorViewMixin, APIView):
             full_name = profile.name if profile else None
             
             image_url = None
-            try:
-                from openedx.core.djangoapps.profile_images.images import get_profile_image_urls_for_user
-                # get_profile_image_urls_for_user returns dict like {'small': 'url', 'medium': 'url', 'large': 'url', 'has_image': True}
-                img_data = get_profile_image_urls_for_user(user)
-                if img_data.get('has_image'):
-                    image_url = img_data.get('medium')
-            except Exception:
-                pass
+            image_url_full = None
+            if profile and profile.has_profile_image:
+                try:
+                    from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
+                    urls = get_profile_image_urls_for_user(user, request=request)
+                    image_url = urls.get('medium')
+                    image_url_full = urls.get('full')
+                except Exception:
+                    pass
                 
             mentors[user.id] = {
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
+                "name": full_name or user.username,
                 "full_name": full_name or user.username,
+                "phone_number": getattr(profile, 'phone_number', None) or '',
+                "bio": getattr(profile, 'bio', None) or '',
                 "profile_image_url": image_url,
+                "profile_image_url_full": image_url_full,
                 "role": role_obj.role
             }
             

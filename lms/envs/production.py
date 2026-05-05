@@ -286,7 +286,7 @@ if ENABLE_THIRD_PARTY_AUTH:
         'social_core.backends.google.GoogleOAuth2',
         'social_core.backends.linkedin.LinkedinOAuth2',
         'social_core.backends.facebook.FacebookOAuth2',
-        'social_core.backends.azuread.AzureADOAuth2',
+        'common.djangoapps.third_party_auth.azuread_custom.AzureADOAuth2Custom',
         'common.djangoapps.third_party_auth.appleid.AppleIdAuth',  # vendored 'social_core.backends.apple.AppleIdAuth'
         'common.djangoapps.third_party_auth.identityserver3.IdentityServer3',
         'common.djangoapps.third_party_auth.saml.SAMLAuthBackend',

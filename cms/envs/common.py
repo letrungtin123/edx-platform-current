@@ -503,6 +503,10 @@ MIDDLEWARE = [
 
     # This must be last so that it runs first in the process_response chain
     'openedx.core.djangoapps.site_configuration.middleware.SessionCookieDomainOverrideMiddleware',
+
+    # LANDA Admin — Bearer token auth + floating button
+    'lms.djangoapps.landa_library.middleware.BearerTokenAuthMiddleware',
+    'lms.djangoapps.landa_library.middleware.LibraryButtonMiddleware',
 ]
 
 

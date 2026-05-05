@@ -297,4 +297,30 @@ def change_password(request):
     })
 
 
+class AccountStatusView(APIView):
+    """
+    GET /api/landa/v1/account/status/
+
+    API siêu nhẹ để FE polling kiểm tra trạng thái tài khoản.
+    Không query database — chỉ đọc Redis blacklist (< 1ms).
+    Trả về: { "is_active": true/false }
+
+    Nếu user đã bị blacklist bởi middleware → request này sẽ
+    nhận 401 trước cả khi chạm tới view này. FE interceptor
+    tự động logout khi nhận 401.
+
+    View này serve trường hợp FE muốn check proactively
+    (trước khi 401 xảy ra trên request chính).
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from lms.djangoapps.landa_library.blacklist import is_user_blacklisted
+        blacklisted = is_user_blacklisted(request.user.id)
+        return Response({'is_active': not blacklisted})
 

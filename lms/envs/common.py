@@ -1426,6 +1426,10 @@ MIDDLEWARE = [
 
     'common.djangoapps.student.middleware.UserStandingMiddleware',
 
+    # LANDA: Chặn user bị blacklist (is_active=False) trên mọi API request
+    # Đọc Redis cache (< 1ms) — không query database
+    'lms.djangoapps.landa_library.middleware.UserBlacklistMiddleware',
+
     # Adds user tags to tracking events
     # Must go before TrackMiddleware, to get the context set up
     'openedx.core.djangoapps.user_api.middleware.UserTagsEventContextMiddleware',

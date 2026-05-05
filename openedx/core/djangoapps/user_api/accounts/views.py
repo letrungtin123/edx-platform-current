@@ -166,7 +166,11 @@ class AccountViewSet(ViewSet):
 
             GET /api/user/v1/me[?view=shared]
         """
-        return Response({"username": request.user.username, "is_staff": request.user.is_staff})
+        return Response({
+            "username": request.user.username,
+            "is_staff": request.user.is_staff,
+            "is_superuser": request.user.is_superuser,
+        })
 
     def list(self, request):
         """Return a list of user details objects

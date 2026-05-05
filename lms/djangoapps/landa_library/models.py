@@ -146,3 +146,45 @@ class LibraryDocument(models.Model):
             if hasattr(self.file, 'size') and self.file.size:
                 self.file_size = self.file.size
         super().save(*args, **kwargs)
+
+
+class AdminAuditLog(models.Model):
+    """
+    Ghi lại hoạt động CRUD của staff/superuser trên admin panel.
+    Denormalized actor_username để tránh JOIN khi query data lớn.
+    Auto-cleanup sau 30 ngày.
+    """
+    ACTION_CHOICES = [
+        ('CREATE', 'Create'),
+        ('UPDATE', 'Update'),
+        ('DELETE', 'Delete'),
+    ]
+
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    actor_username = models.CharField(max_length=150, db_index=True)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES, db_index=True)
+    entity_type = models.CharField(max_length=50, db_index=True)
+    entity_name = models.CharField(max_length=255)
+    entity_id = models.CharField(max_length=100, blank=True, default='')
+    details = models.TextField(blank=True, default='')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Admin Audit Log'
+        verbose_name_plural = 'Admin Audit Logs'
+        indexes = [
+            models.Index(fields=['-created_at', 'action']),
+            models.Index(fields=['actor_username', '-created_at']),
+            models.Index(fields=['entity_type', '-created_at']),
+        ]
+
+    def __str__(self):
+        return f"[{self.action}] {self.actor_username} → {self.entity_type}: {self.entity_name}"
+
