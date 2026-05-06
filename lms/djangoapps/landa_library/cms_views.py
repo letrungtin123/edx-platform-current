@@ -245,6 +245,7 @@ def courses_api(request):
             'end': c.end.strftime('%d/%m/%Y') if c.end else '-',
             'created': c.created.strftime('%d/%m/%Y %H:%M') if c.created else '',
             'modified': c.modified.strftime('%d/%m/%Y %H:%M') if c.modified else '',
+            'image_url': c.image_urls.get('raw', '') if hasattr(c, 'image_urls') else getattr(c, 'course_image_url', ''),
         })
 
     return JsonResponse({
