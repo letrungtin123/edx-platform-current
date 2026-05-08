@@ -7,6 +7,7 @@ Include bằng cách thêm vào lms/urls.py:
 
 from django.urls import re_path
 from lms.djangoapps.landa_api.views import CourseFilesView
+from lms.djangoapps.landa_api.views_register import PublicRegisterView
 
 urlpatterns = [
     # GET /api/landa/v0/course_files/{course_id}/
@@ -15,4 +16,11 @@ urlpatterns = [
         CourseFilesView.as_view(),
         name="landa_course_files",
     ),
+    # POST /api/landa/v1/public/register/
+    re_path(
+        r"^v1/public/register/$",
+        PublicRegisterView.as_view(),
+        name="landa_public_register",
+    ),
 ]
+

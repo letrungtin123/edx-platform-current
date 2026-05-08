@@ -2391,6 +2391,9 @@ INSTALLED_APPS = [
 
     # LANDA Library — Kho tài liệu nội bộ
     'lms.djangoapps.landa_library',
+
+    # LANDA Groups — Quản lý nhóm học viên và phân quyền course
+    'lms.djangoapps.landa_groups',
 ]
 
 ######################### Django Rest Framework ########################

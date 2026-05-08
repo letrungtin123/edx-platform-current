@@ -5,7 +5,7 @@ Include vào lms/urls.py:
     path('api/landa/', include('lms.djangoapps.landa_library.urls')),
 """
 
-from django.urls import path
+from django.urls import include, path
 
 from lms.djangoapps.landa_library.views import (
     AccountStatusView,
@@ -92,4 +92,7 @@ urlpatterns = [
     path('admin/report-uncompleted-learners/', UncompletedLearnersView.as_view(), name='landa_admin_report_uncompleted_learners'),
     path('admin/learner-detail/', LearnerDetailView.as_view(), name='landa_admin_learner_detail'),
     path('admin/audit-logs/', AdminAuditLogsView.as_view(), name='landa_admin_audit_logs'),
+
+    # ── Group Management (landa_groups app) ──
+    path('', include('lms.djangoapps.landa_groups.urls')),
 ]

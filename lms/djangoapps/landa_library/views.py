@@ -102,11 +102,19 @@ class DocumentListView(ListAPIView):
         Base queryset: chỉ file visible + select_related category.
         Apply filter + search từ query params.
         """
+        user = self.request.user
         qs = (
             LibraryDocument.objects
             .filter(is_visible=True)
             .select_related('category', 'uploaded_by')
         )
+
+        if not user.is_staff and not user.is_superuser:
+            from lms.djangoapps.landa_groups.models import SubGroupCategoryAssignment
+            allowed_category_ids = SubGroupCategoryAssignment.objects.filter(
+                subgroup__memberships__user=user
+            ).values_list('category_id', flat=True)
+            qs = qs.filter(category_id__in=allowed_category_ids)
 
         # ── Filter theo category slug ──
         category_slug = self.request.query_params.get('category')
@@ -155,6 +163,7 @@ class CategorySummaryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        user = request.user
         # Annotate count file visible cho mỗi category
         categories = (
             DocumentCategory.objects
@@ -168,10 +177,20 @@ class CategorySummaryView(APIView):
             .order_by('sort_order', 'name')
         )
 
+        if not user.is_staff and not user.is_superuser:
+            from lms.djangoapps.landa_groups.models import SubGroupCategoryAssignment
+            allowed_category_ids = SubGroupCategoryAssignment.objects.filter(
+                subgroup__memberships__user=user
+            ).values_list('category_id', flat=True)
+            categories = categories.filter(id__in=allowed_category_ids)
+
         serializer = DocumentCategorySerializer(categories, many=True)
 
         # Tổng số file visible (tất cả category)
-        total = LibraryDocument.objects.filter(is_visible=True).count()
+        if not user.is_staff and not user.is_superuser:
+            total = LibraryDocument.objects.filter(is_visible=True, category_id__in=allowed_category_ids).count()
+        else:
+            total = LibraryDocument.objects.filter(is_visible=True).count()
 
         return Response({
             'categories': serializer.data,
@@ -194,9 +213,19 @@ def document_download(request, doc_id):
     Trả FileResponse (streaming) — không load toàn bộ file vào RAM.
     """
     try:
-        doc = LibraryDocument.objects.get(id=doc_id, is_visible=True)
+        doc = LibraryDocument.objects.select_related('category').get(id=doc_id, is_visible=True)
     except LibraryDocument.DoesNotExist:
         raise Http404("Document not found")
+
+    user = request.user
+    if not user.is_staff and not user.is_superuser:
+        from lms.djangoapps.landa_groups.models import SubGroupCategoryAssignment
+        has_access = SubGroupCategoryAssignment.objects.filter(
+            category=doc.category,
+            subgroup__memberships__user=user
+        ).exists()
+        if not has_access:
+            raise Http404("Document not found")
 
     if not doc.file:
         raise Http404("File not found")
