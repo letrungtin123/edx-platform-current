@@ -41,7 +41,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument
+from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig
 from lms.djangoapps.landa_library.serializers import (
     DocumentCategorySerializer,
     LibraryDocumentSerializer,
@@ -352,4 +352,48 @@ class AccountStatusView(APIView):
         from lms.djangoapps.landa_library.blacklist import is_user_blacklisted
         blacklisted = is_user_blacklisted(request.user.id)
         return Response({'is_active': not blacklisted})
+
+
+class CourseModalConfigPublicView(APIView):
+    """
+    GET /api/landa/v1/course-modal-config/?course_id=xxx
+
+    Learner (authenticated) đọc cấu hình modal cho course đang học.
+    Trả về chỉ những field cần thiết + fallback defaults.
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        course_id = request.query_params.get('course_id', '')
+        if not course_id:
+            return Response({'error': 'course_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            cfg = CourseModalConfig.objects.get(course_id=course_id)
+            return Response({
+                'confirm_enabled': cfg.confirm_enabled,
+                'confirm_title': cfg.confirm_title or '',
+                'confirm_description': cfg.confirm_description or '',
+                'confirm_checkbox_text': cfg.confirm_checkbox_text or '',
+                'completion_enabled': cfg.completion_enabled,
+                'completion_title': cfg.completion_title or '',
+                'completion_description': cfg.completion_description or '',
+            })
+        except CourseModalConfig.DoesNotExist:
+            return Response({
+                'confirm_enabled': True,
+                'confirm_title': '',
+                'confirm_description': '',
+                'confirm_checkbox_text': '',
+                'completion_enabled': True,
+                'completion_title': '',
+                'completion_description': '',
+            })
+
+
 

@@ -10,6 +10,7 @@ from django.urls import include, path
 from lms.djangoapps.landa_library.views import (
     AccountStatusView,
     CategorySummaryView,
+    CourseModalConfigPublicView,
     DocumentListView,
     change_password,
     document_download,
@@ -24,9 +25,12 @@ from lms.djangoapps.landa_library.admin_api import (
     AdminCoursesView,
     AdminCourseDetailView,
     AdminCourseBulkView,
+    AdminCourseModalConfigView,
+    AdminCourseNotificationView,
     AdminUsersView,
     AdminUserDetailView,
     AdminAuditLogsView,
+    TestNotsView,
 )
 from lms.djangoapps.landa_library.report_api import (
     ReportSummaryView,
@@ -35,6 +39,15 @@ from lms.djangoapps.landa_library.report_api import (
     ReportChartTrendView,
     TopCoursesView,
     UncompletedLearnersView,
+)
+from lms.djangoapps.landa_library.help_docs_api import (
+    HelpFoldersView,
+    HelpFolderDetailView,
+    HelpFolderReorderView,
+    HelpPagesView,
+    HelpPageDetailView,
+    HelpPageReorderView,
+    HelpImageUploadView,
 )
 
 
@@ -70,6 +83,11 @@ urlpatterns = [
         AccountStatusView.as_view(),
         name='landa_account_status',
     ),
+    path(
+        'v1/course-modal-config/',
+        CourseModalConfigPublicView.as_view(),
+        name='landa_course_modal_config',
+    ),
 
     # ══════════════════════════════════════════
     # Admin API — dùng cho frontend-shell
@@ -82,8 +100,10 @@ urlpatterns = [
     path('admin/categories/<int:cat_id>/', AdminCategoryDetailView.as_view(), name='landa_admin_category_detail'),
     path('admin/categories/bulk/', AdminCategoryBulkView.as_view(), name='landa_admin_category_bulk'),
     path('admin/courses/', AdminCoursesView.as_view(), name='landa_admin_courses'),
-    path('admin/courses/<path:course_id>/', AdminCourseDetailView.as_view(), name='landa_admin_course_detail'),
     path('admin/courses-bulk/', AdminCourseBulkView.as_view(), name='landa_admin_course_bulk'),
+    path('admin/courses/<path:course_id>/modal-config/', AdminCourseModalConfigView.as_view(), name='landa_admin_course_modal_config'),
+    path('admin/courses/<path:course_id>/send-notification/', AdminCourseNotificationView.as_view(), name='landa_admin_course_send_notification'),
+    path('admin/courses/<path:course_id>/', AdminCourseDetailView.as_view(), name='landa_admin_course_detail'),
     path('admin/users/', AdminUsersView.as_view(), name='landa_admin_users'),
     path('admin/users/<int:user_id>/', AdminUserDetailView.as_view(), name='landa_admin_user_detail'),
     path('admin/report-summary/', ReportSummaryView.as_view(), name='landa_admin_report_summary'),
@@ -92,7 +112,18 @@ urlpatterns = [
     path('admin/report-uncompleted-learners/', UncompletedLearnersView.as_view(), name='landa_admin_report_uncompleted_learners'),
     path('admin/learner-detail/', LearnerDetailView.as_view(), name='landa_admin_learner_detail'),
     path('admin/audit-logs/', AdminAuditLogsView.as_view(), name='landa_admin_audit_logs'),
+    path('v1/public/test-nots/', TestNotsView.as_view(), name='test_nots'),
+
+    # ── Help Docs API (superuser write, staff read) ──
+    path('admin/help-folders/', HelpFoldersView.as_view(), name='landa_help_folders'),
+    path('admin/help-folders/reorder/', HelpFolderReorderView.as_view(), name='landa_help_folders_reorder'),
+    path('admin/help-folders/<int:folder_id>/', HelpFolderDetailView.as_view(), name='landa_help_folder_detail'),
+    path('admin/help-pages/', HelpPagesView.as_view(), name='landa_help_pages'),
+    path('admin/help-pages/reorder/', HelpPageReorderView.as_view(), name='landa_help_pages_reorder'),
+    path('admin/help-pages/upload-image/', HelpImageUploadView.as_view(), name='landa_help_image_upload'),
+    path('admin/help-pages/<int:page_id>/', HelpPageDetailView.as_view(), name='landa_help_page_detail'),
 
     # ── Group Management (landa_groups app) ──
     path('', include('lms.djangoapps.landa_groups.urls')),
 ]
+

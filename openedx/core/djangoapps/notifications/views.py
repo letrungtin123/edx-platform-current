@@ -88,7 +88,6 @@ class NotificationListAPIView(generics.ListAPIView):
             notification_tray_opened_event(self.request.user, unseen_count)
         params = {
             'user': self.request.user,
-            'created__gte': expiry_date,
             'web': True
         }
 

@@ -188,3 +188,152 @@ class AdminAuditLog(models.Model):
     def __str__(self):
         return f"[{self.action}] {self.actor_username} → {self.entity_type}: {self.entity_name}"
 
+
+class CourseModalConfig(models.Model):
+    """
+    Cấu hình 2 modal (Confirm + Completion) cho từng khóa học.
+    Mỗi course có tối đa 1 record — tạo lần đầu khi admin cấu hình.
+    """
+    course_id = models.CharField(
+        max_length=255,
+        unique=True,
+        db_index=True,
+        verbose_name="Course ID",
+        help_text="CourseKey dạng course-v1:Org+Number+Run"
+    )
+
+    # ── Confirm Modal (hiện khi progress = 0%) ──
+    confirm_enabled = models.BooleanField(default=False, verbose_name="Bật Confirm Modal")
+    confirm_title = models.CharField(
+        max_length=255, blank=True, default="",
+        verbose_name="Tiêu đề Confirm Modal"
+    )
+    confirm_description = models.TextField(
+        blank=True, default="",
+        verbose_name="Mô tả Confirm Modal"
+    )
+    confirm_checkbox_text = models.CharField(
+        max_length=500, blank=True, default="",
+        verbose_name="Nội dung checkbox xác nhận"
+    )
+
+    # ── Completion Modal (hiện khi progress = 100%) ──
+    completion_enabled = models.BooleanField(default=False, verbose_name="Bật Completion Modal")
+    completion_title = models.CharField(
+        max_length=255, blank=True, default="",
+        verbose_name="Tiêu đề Completion Modal"
+    )
+    completion_description = models.TextField(
+        blank=True, default="",
+        verbose_name="Mô tả Completion Modal"
+    )
+
+    # ── Metadata ──
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Người cập nhật gần nhất"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Course Modal Config"
+        verbose_name_plural = "Course Modal Configs"
+
+    def __str__(self):
+        return f"ModalConfig({self.course_id})"
+
+
+def help_image_upload_path(instance, filename):
+    """Upload path: help_docs/images/<filename>"""
+    return os.path.join('help_docs', 'images', filename)
+
+
+class HelpFolder(models.Model):
+    """
+    Folder gốc trong cây Help Docs.
+    Cấu trúc 2 cấp: Folder → Page (không có subfolder).
+    Chỉ superuser mới được tạo/sửa/xóa.
+    """
+    title = models.CharField(max_length=200, verbose_name="Tên folder")
+    slug = models.SlugField(max_length=200, unique=True, help_text="URL-friendly, auto-gen từ title")
+    icon = models.CharField(max_length=50, blank=True, default='', verbose_name="Lucide icon name")
+    sort_order = models.PositiveIntegerField(default=0, verbose_name="Thứ tự")
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='help_folders_created',
+        verbose_name="Người tạo",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sort_order', 'title']
+        verbose_name = 'Help Folder'
+        verbose_name_plural = 'Help Folders'
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title, allow_unicode=True)
+        super().save(*args, **kwargs)
+
+
+class HelpPage(models.Model):
+    """
+    Trang tài liệu hướng dẫn trong một HelpFolder.
+    Nội dung HTML (rich text) + ảnh embed.
+    Chỉ superuser mới được tạo/sửa/xóa. Staff chỉ xem.
+    """
+    folder = models.ForeignKey(
+        HelpFolder,
+        on_delete=models.CASCADE,
+        related_name='pages',
+        verbose_name="Folder",
+    )
+    title = models.CharField(max_length=300, verbose_name="Tiêu đề")
+    slug = models.SlugField(max_length=300, help_text="Unique trong folder")
+    content = models.TextField(blank=True, default='', verbose_name="Nội dung HTML")
+    sort_order = models.PositiveIntegerField(default=0, verbose_name="Thứ tự trong folder")
+    is_published = models.BooleanField(default=False, db_index=True, verbose_name="Đã xuất bản")
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='help_pages_created',
+        verbose_name="Người tạo",
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='help_pages_updated',
+        verbose_name="Người sửa gần nhất",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['sort_order', 'title']
+        verbose_name = 'Help Page'
+        verbose_name_plural = 'Help Pages'
+        unique_together = [('folder', 'slug')]
+        indexes = [
+            models.Index(fields=['folder', 'sort_order']),
+            models.Index(fields=['is_published', 'folder']),
+        ]
+
+    def __str__(self):
+        return f"{self.folder.title} / {self.title}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.title, allow_unicode=True)
+        super().save(*args, **kwargs)

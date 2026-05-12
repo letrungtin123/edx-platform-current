@@ -24,7 +24,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument
+from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig
 from lms.djangoapps.landa_library.validators import ALLOWED_EXTENSIONS, get_file_extension
 from lms.djangoapps.landa_library.audit import log_admin_action
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
@@ -439,6 +439,205 @@ class AdminCourseBulkView(APIView):
         )
         return Response({'success': True, 'updated': updated})
 
+# ══════════════════════════════════════════════
+# Course Modal Config API
+# ══════════════════════════════════════════════
+
+class AdminCourseModalConfigView(APIView):
+    """
+    GET  /api/landa/admin/courses/<course_id>/modal-config/ — Lấy cấu hình modal
+    PUT  /api/landa/admin/courses/<course_id>/modal-config/ — Tạo hoặc cập nhật cấu hình
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    DEFAULTS = {
+        'confirm_enabled': True,
+        'confirm_title': '',
+        'confirm_description': '',
+        'confirm_checkbox_text': '',
+        'completion_enabled': True,
+        'completion_title': '',
+        'completion_description': '',
+    }
+
+    def get(self, request, course_id):
+        try:
+            cfg = CourseModalConfig.objects.get(course_id=course_id)
+            data = {
+                'course_id': cfg.course_id,
+                'confirm_enabled': cfg.confirm_enabled,
+                'confirm_title': cfg.confirm_title,
+                'confirm_description': cfg.confirm_description,
+                'confirm_checkbox_text': cfg.confirm_checkbox_text,
+                'completion_enabled': cfg.completion_enabled,
+                'completion_title': cfg.completion_title,
+                'completion_description': cfg.completion_description,
+                'updated_at': cfg.updated_at.isoformat() if cfg.updated_at else None,
+            }
+        except CourseModalConfig.DoesNotExist:
+            data = {'course_id': course_id, **self.DEFAULTS, 'updated_at': None}
+        return Response(data)
+
+    def put(self, request, course_id):
+        data = request.data
+        cfg, created = CourseModalConfig.objects.update_or_create(
+            course_id=course_id,
+            defaults={
+                'confirm_enabled': data.get('confirm_enabled', True),
+                'confirm_title': data.get('confirm_title', ''),
+                'confirm_description': data.get('confirm_description', ''),
+                'confirm_checkbox_text': data.get('confirm_checkbox_text', ''),
+                'completion_enabled': data.get('completion_enabled', True),
+                'completion_title': data.get('completion_title', ''),
+                'completion_description': data.get('completion_description', ''),
+                'updated_by': request.user,
+            }
+        )
+        log_admin_action(
+            request, 'UPDATE' if not created else 'CREATE',
+            'CourseModalConfig', course_id, entity_id=course_id,
+        )
+        return Response({'success': True})
+
+
+# ══════════════════════════════════════════════
+# Course Notification API (gửi thông báo cho learner)
+# ══════════════════════════════════════════════
+
+class AdminCourseNotificationView(APIView):
+    """
+    POST /api/landa/admin/courses/<course_id>/send-notification/
+    Gửi notification cho tất cả learner enrolled trong course.
+
+    Request body:
+    {
+        "title": "Tiêu đề thông báo",
+        "message": "Nội dung thông báo HTML"
+    }
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def post(self, request, course_id):
+        title = (request.data.get('title') or '').strip()
+        message = (request.data.get('message') or '').strip()
+
+        if not message:
+            return Response(
+                {'error': 'message is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Lấy danh sách user_ids enrolled trong course
+        from common.djangoapps.student.models import CourseEnrollment
+        from opaque_keys.edx.keys import CourseKey
+
+        try:
+            course_key = CourseKey.from_string(course_id)
+        except Exception:
+            return Response(
+                {'error': 'Invalid course_id'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from lms.djangoapps.landa_groups.models import SubGroupCourseAssignment, SubGroupMembership
+
+        # 1. Tìm các subgroups được assign course này
+        assigned_subgroups = SubGroupCourseAssignment.objects.filter(
+            course_id=str(course_key)
+        ).values_list('subgroup_id', flat=True)
+
+        # 2. Tìm tất cả users đang ở trong các subgroups đó
+        allowed_user_ids = set(SubGroupMembership.objects.filter(
+            subgroup_id__in=assigned_subgroups
+        ).values_list('user_id', flat=True))
+
+        # 3. Chỉ lấy những enrolled users có mặt trong group đó
+        enrolled_user_ids = list(
+            CourseEnrollment.objects
+            .filter(course_id=course_key, is_active=True, user_id__in=allowed_user_ids)
+            .values_list('user_id', flat=True)
+        )
+
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f">>>>> DEBUG NOTIFICATION <<<<<")
+        logger.error(f"COURSE: {course_id}")
+        logger.error(f"ENROLLED USERS (is_active=True): {enrolled_user_ids}")
+        logger.error(f"REQUEST USER: {request.user.id} - {request.user.username}")
+
+        if not enrolled_user_ids:
+            return Response(
+                {'error': 'No enrolled learners found'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Tạo Notification trực tiếp cho mỗi enrolled user
+        from openedx.core.djangoapps.notifications.models import Notification
+
+        content_html = message
+        if title:
+            content_html = f'<p><strong>{title}</strong></p>{message}'
+
+        created_count = 0
+        for uid in enrolled_user_ids:
+            notif = Notification(
+                user_id=uid,
+                app_name='updates',
+                notification_type='course_updates',
+                content_context={
+                    'course_update_content': content_html,
+                },
+                course_id=course_key,
+                web=True,
+                email=False,
+                push=False,
+            )
+            notif.save()
+            created_count += 1
+
+        log_admin_action(
+            request, 'NOTIFY',
+            'Course', course_id, entity_id=course_id,
+        )
+
+        log.info(
+            "Admin %s sent notification to %d learners in %s",
+            request.user.username, len(enrolled_user_ids), course_id,
+        )
+
+        return Response({
+            'success': True,
+            'recipients': created_count,
+        })
+
+
+from rest_framework.permissions import AllowAny
+class TestNotsView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        uid = request.GET.get('uid')
+        if not uid:
+            from openedx.core.djangoapps.notifications.models import Notification
+            nots = Notification.objects.order_by('-created')[:10]
+        else:
+            from openedx.core.djangoapps.notifications.models import Notification
+            nots = Notification.objects.filter(user_id=uid).order_by('-created')[:10]
+        
+        data = []
+        for n in nots:
+            data.append({
+                'id': n.id,
+                'user_id': n.user_id,
+                'course_id': str(n.course_id),
+                'app_name': n.app_name,
+                'notification_type': n.notification_type,
+                'content_context': n.content_context,
+                'web': n.web,
+                'created': n.created.isoformat() if n.created else None,
+            })
+        return Response({'count': len(data), 'data': data})
 # ══════════════════════════════════════════════
 # User Management API
 # ══════════════════════════════════════════════
