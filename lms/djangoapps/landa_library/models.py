@@ -202,6 +202,17 @@ class CourseModalConfig(models.Model):
         help_text="CourseKey dạng course-v1:Org+Number+Run"
     )
 
+    # ── Welcome Modal ──
+    welcome_enabled = models.BooleanField(default=False, verbose_name="Bật Welcome Modal")
+    welcome_title = models.CharField(
+        max_length=255, blank=True, default="",
+        verbose_name="Tiêu đề Welcome Modal"
+    )
+    welcome_description = models.TextField(
+        blank=True, default="",
+        verbose_name="Mô tả Welcome Modal"
+    )
+
     # ── Confirm Modal (hiện khi progress = 0%) ──
     confirm_enabled = models.BooleanField(default=False, verbose_name="Bật Confirm Modal")
     confirm_title = models.CharField(

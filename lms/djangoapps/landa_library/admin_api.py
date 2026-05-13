@@ -452,6 +452,9 @@ class AdminCourseModalConfigView(APIView):
     permission_classes = [IsStaffUser]
 
     DEFAULTS = {
+        'welcome_enabled': True,
+        'welcome_title': '',
+        'welcome_description': '',
         'confirm_enabled': True,
         'confirm_title': '',
         'confirm_description': '',
@@ -466,6 +469,9 @@ class AdminCourseModalConfigView(APIView):
             cfg = CourseModalConfig.objects.get(course_id=course_id)
             data = {
                 'course_id': cfg.course_id,
+                'welcome_enabled': cfg.welcome_enabled,
+                'welcome_title': cfg.welcome_title,
+                'welcome_description': cfg.welcome_description,
                 'confirm_enabled': cfg.confirm_enabled,
                 'confirm_title': cfg.confirm_title,
                 'confirm_description': cfg.confirm_description,
@@ -484,6 +490,9 @@ class AdminCourseModalConfigView(APIView):
         cfg, created = CourseModalConfig.objects.update_or_create(
             course_id=course_id,
             defaults={
+                'welcome_enabled': data.get('welcome_enabled', True),
+                'welcome_title': data.get('welcome_title', ''),
+                'welcome_description': data.get('welcome_description', ''),
                 'confirm_enabled': data.get('confirm_enabled', True),
                 'confirm_title': data.get('confirm_title', ''),
                 'confirm_description': data.get('confirm_description', ''),

@@ -376,6 +376,9 @@ class CourseModalConfigPublicView(APIView):
         try:
             cfg = CourseModalConfig.objects.get(course_id=course_id)
             return Response({
+                'welcome_enabled': cfg.welcome_enabled,
+                'welcome_title': cfg.welcome_title or '',
+                'welcome_description': cfg.welcome_description or '',
                 'confirm_enabled': cfg.confirm_enabled,
                 'confirm_title': cfg.confirm_title or '',
                 'confirm_description': cfg.confirm_description or '',
@@ -386,6 +389,9 @@ class CourseModalConfigPublicView(APIView):
             })
         except CourseModalConfig.DoesNotExist:
             return Response({
+                'welcome_enabled': True,
+                'welcome_title': '',
+                'welcome_description': '',
                 'confirm_enabled': True,
                 'confirm_title': '',
                 'confirm_description': '',
