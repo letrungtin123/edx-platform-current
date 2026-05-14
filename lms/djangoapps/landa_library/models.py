@@ -399,3 +399,121 @@ class UserBadge(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.badge_id}"
 
+
+class UserCourseModalState(models.Model):
+    """
+    Lưu trữ trạng thái hiển thị của các Modals khóa học (Welcome, 100%, Confirm).
+    Được đánh giá và tạo từ Frontend (FE-5173).
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='course_modal_states',
+        verbose_name="Learner"
+    )
+    course_id = models.CharField(
+        max_length=255,
+        db_index=True,
+        verbose_name="Course ID"
+    )
+    welcome_shown = models.BooleanField(
+        default=False,
+        verbose_name="Đã hiện Welcome"
+    )
+    confirm_shown = models.BooleanField(
+        default=False,
+        verbose_name="Đã hiện Confirm"
+    )
+    complete_shown = models.BooleanField(
+        default=False,
+        verbose_name="Đã hiện Complete"
+    )
+
+    class Meta:
+        # unique_together tự động tạo index phức hợp (user_id, course_id)
+        # Giúp truy vấn O(1) và cực kỳ tối ưu cho hàng triệu record dưới DB
+        unique_together = ['user', 'course_id']
+        verbose_name = 'Course Modal State'
+        verbose_name_plural = 'Course Modal States'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course_id}"
+
+
+class SectionModalConfig(models.Model):
+    """
+    Cấu hình modal khích lệ cho từng Section (Chapter) trong khóa học.
+    Mỗi section có tối đa 1 record config — admin tạo/sửa qua Course Editor.
+    """
+    course_id = models.CharField(
+        max_length=255,
+        db_index=True,
+        verbose_name="Course ID"
+    )
+    section_id = models.CharField(
+        max_length=255,
+        verbose_name="Section Block ID",
+        help_text="Block ID của chapter, vd: block-v1:Org+Num+Run+type@chapter+block@xxx"
+    )
+    enabled = models.BooleanField(
+        default=False,
+        verbose_name="Bật popup khích lệ"
+    )
+    title = models.CharField(
+        max_length=255, blank=True, default="",
+        verbose_name="Tiêu đề modal"
+    )
+    description = models.TextField(
+        blank=True, default="",
+        verbose_name="Nội dung khích lệ"
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        verbose_name="Người cập nhật"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['course_id', 'section_id']
+        verbose_name = 'Section Modal Config'
+        verbose_name_plural = 'Section Modal Configs'
+
+    def __str__(self):
+        return f"SectionModal({self.course_id} / {self.section_id})"
+
+
+class UserSectionModalShown(models.Model):
+    """
+    Track trạng thái user đã xem popup khích lệ section nào.
+    Tách bảng riêng (không dùng JSONField) để tối ưu cho hàng triệu records.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='section_modal_shown',
+        verbose_name="Learner"
+    )
+    course_id = models.CharField(
+        max_length=255,
+        db_index=True,
+        verbose_name="Course ID"
+    )
+    section_id = models.CharField(
+        max_length=255,
+        verbose_name="Section Block ID"
+    )
+    shown_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Thời điểm xem"
+    )
+
+    class Meta:
+        # Index composite 3 cột → lookup O(1) ngay cả với hàng chục triệu rows
+        unique_together = ['user', 'course_id', 'section_id']
+        verbose_name = 'User Section Modal Shown'
+        verbose_name_plural = 'User Section Modal Shown'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.course_id} / {self.section_id}"

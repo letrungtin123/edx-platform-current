@@ -41,7 +41,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig, UserBadge
+from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig, UserBadge, UserCourseModalState, SectionModalConfig, UserSectionModalShown
 from lms.djangoapps.landa_library.serializers import (
     DocumentCategorySerializer,
     LibraryDocumentSerializer,
@@ -468,3 +468,140 @@ class UserBadgeView(APIView):
             return Response({"success": True, "badge_id": badge_id, "is_shown": badge.is_shown})
         except UserBadge.DoesNotExist:
             return Response({"error": "Badge not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UserCourseModalStateView(APIView):
+    """
+    GET /api/landa/v1/course-modal-state/?course_id=...
+    PATCH /api/landa/v1/course-modal-state/
+        Body: {"course_id": "...", "welcome_shown": true}
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        course_id = request.query_params.get("course_id")
+        if not course_id:
+            return Response({"error": "course_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        state, _ = UserCourseModalState.objects.get_or_create(
+            user=request.user,
+            course_id=course_id
+        )
+        return Response({
+            "course_id": state.course_id,
+            "welcome_shown": state.welcome_shown,
+            "confirm_shown": state.confirm_shown,
+            "complete_shown": state.complete_shown,
+        })
+
+    def patch(self, request):
+        course_id = request.data.get("course_id")
+        if not course_id:
+            return Response({"error": "course_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Optimize: Lấy object hoặc tạo mới nếu chưa có
+        state, _ = UserCourseModalState.objects.get_or_create(
+            user=request.user,
+            course_id=course_id
+        )
+        
+        welcome_shown = request.data.get("welcome_shown")
+        confirm_shown = request.data.get("confirm_shown")
+        complete_shown = request.data.get("complete_shown")
+
+        update_fields = []
+        if welcome_shown is not None:
+            # Parse str to boolean để an toàn nếu FE truyền nhầm type
+            state.welcome_shown = str(welcome_shown).lower() == 'true' if isinstance(welcome_shown, str) else bool(welcome_shown)
+            update_fields.append('welcome_shown')
+        if confirm_shown is not None:
+            state.confirm_shown = str(confirm_shown).lower() == 'true' if isinstance(confirm_shown, str) else bool(confirm_shown)
+            update_fields.append('confirm_shown')
+        if complete_shown is not None:
+            state.complete_shown = str(complete_shown).lower() == 'true' if isinstance(complete_shown, str) else bool(complete_shown)
+            update_fields.append('complete_shown')
+
+        if update_fields:
+            state.save(update_fields=update_fields)
+            
+        return Response({
+            "success": True,
+            "course_id": state.course_id,
+            "welcome_shown": state.welcome_shown,
+            "confirm_shown": state.confirm_shown,
+            "complete_shown": state.complete_shown,
+        })
+
+
+class SectionModalConfigPublicView(APIView):
+    """
+    GET /api/landa/v1/section-modal-config/?course_id=...
+    Trả về danh sách các section có modal khích lệ được bật (enabled=True).
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        course_id = request.query_params.get("course_id")
+        if not course_id:
+            return Response({"error": "course_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        configs = SectionModalConfig.objects.filter(
+            course_id=course_id,
+            enabled=True
+        ).values('section_id', 'title', 'description')
+
+        return Response(list(configs))
+
+
+class UserSectionModalShownView(APIView):
+    """
+    GET  /api/landa/v1/section-modal-shown/?course_id=...
+         Trả về list section_id mà user đã xem popup.
+    POST /api/landa/v1/section-modal-shown/
+         Đánh dấu đã xem. Body: {"course_id": "...", "section_id": "..."}
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        course_id = request.query_params.get("course_id")
+        if not course_id:
+            return Response({"error": "course_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        shown = UserSectionModalShown.objects.filter(
+            user=request.user,
+            course_id=course_id
+        ).values_list('section_id', flat=True)
+
+        return Response({"shown_sections": list(shown)})
+
+    def post(self, request):
+        course_id = request.data.get("course_id")
+        section_id = request.data.get("section_id")
+        if not course_id or not section_id:
+            return Response(
+                {"error": "course_id and section_id are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # get_or_create: idempotent, không lỗi nếu gọi lại
+        UserSectionModalShown.objects.get_or_create(
+            user=request.user,
+            course_id=course_id,
+            section_id=section_id
+        )
+        return Response({"success": True})

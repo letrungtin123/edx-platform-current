@@ -24,7 +24,7 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig
+from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig, SectionModalConfig
 from lms.djangoapps.landa_library.validators import ALLOWED_EXTENSIONS, get_file_extension
 from lms.djangoapps.landa_library.audit import log_admin_action
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
@@ -950,3 +950,74 @@ class AdminAuditLogsView(APIView):
             'results': results,
         })
 
+
+# ══════════════════════════════════════════════
+# Section Modal Config API (cấu hình modal khích lệ per-section)
+# ══════════════════════════════════════════════
+
+class AdminSectionModalConfigView(APIView):
+    """
+    GET  /api/landa/admin/courses/<course_id>/section-modal-config/
+         → List tất cả section configs của 1 course
+    GET  /api/landa/admin/courses/<course_id>/section-modal-config/?section_id=...
+         → Lấy config của 1 section cụ thể
+    PUT  /api/landa/admin/courses/<course_id>/section-modal-config/
+         → Tạo/cập nhật config cho 1 section (body gửi section_id)
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def get(self, request, course_id):
+        section_id = request.query_params.get('section_id')
+        if section_id:
+            try:
+                cfg = SectionModalConfig.objects.get(course_id=course_id, section_id=section_id)
+                return Response({
+                    'section_id': cfg.section_id,
+                    'enabled': cfg.enabled,
+                    'title': cfg.title,
+                    'description': cfg.description,
+                    'updated_at': cfg.updated_at.isoformat() if cfg.updated_at else None,
+                })
+            except SectionModalConfig.DoesNotExist:
+                return Response({
+                    'section_id': section_id,
+                    'enabled': False,
+                    'title': '',
+                    'description': '',
+                    'updated_at': None,
+                })
+        else:
+            configs = SectionModalConfig.objects.filter(course_id=course_id)
+            return Response([
+                {
+                    'section_id': cfg.section_id,
+                    'enabled': cfg.enabled,
+                    'title': cfg.title,
+                    'description': cfg.description,
+                    'updated_at': cfg.updated_at.isoformat() if cfg.updated_at else None,
+                }
+                for cfg in configs
+            ])
+
+    def put(self, request, course_id):
+        data = request.data
+        section_id = data.get('section_id')
+        if not section_id:
+            return Response({'error': 'section_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        cfg, created = SectionModalConfig.objects.update_or_create(
+            course_id=course_id,
+            section_id=section_id,
+            defaults={
+                'enabled': data.get('enabled', False),
+                'title': data.get('title', ''),
+                'description': data.get('description', ''),
+                'updated_by': request.user,
+            }
+        )
+        log_admin_action(
+            request, 'UPDATE' if not created else 'CREATE',
+            'SectionModalConfig', section_id, entity_id=section_id,
+        )
+        return Response({'success': True})

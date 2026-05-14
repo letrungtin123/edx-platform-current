@@ -15,6 +15,9 @@ from lms.djangoapps.landa_library.views import (
     change_password,
     document_download,
     UserBadgeView,
+    UserCourseModalStateView,
+    SectionModalConfigPublicView,
+    UserSectionModalShownView,
 )
 from lms.djangoapps.landa_library.admin_api import (
     AdminDocumentsView,
@@ -32,6 +35,7 @@ from lms.djangoapps.landa_library.admin_api import (
     AdminUserDetailView,
     AdminAuditLogsView,
     TestNotsView,
+    AdminSectionModalConfigView,
 )
 from lms.djangoapps.landa_library.report_api import (
     ReportSummaryView,
@@ -94,6 +98,21 @@ urlpatterns = [
         UserBadgeView.as_view(),
         name='landa_user_badges',
     ),
+    path(
+        'v1/course-modal-state/',
+        UserCourseModalStateView.as_view(),
+        name='landa_course_modal_state',
+    ),
+    path(
+        'v1/section-modal-config/',
+        SectionModalConfigPublicView.as_view(),
+        name='landa_section_modal_config',
+    ),
+    path(
+        'v1/section-modal-shown/',
+        UserSectionModalShownView.as_view(),
+        name='landa_section_modal_shown',
+    ),
 
     # ══════════════════════════════════════════
     # Admin API — dùng cho frontend-shell
@@ -109,6 +128,7 @@ urlpatterns = [
     path('admin/courses-bulk/', AdminCourseBulkView.as_view(), name='landa_admin_course_bulk'),
     path('admin/courses/<path:course_id>/modal-config/', AdminCourseModalConfigView.as_view(), name='landa_admin_course_modal_config'),
     path('admin/courses/<path:course_id>/send-notification/', AdminCourseNotificationView.as_view(), name='landa_admin_course_send_notification'),
+    path('admin/courses/<path:course_id>/section-modal-config/', AdminSectionModalConfigView.as_view(), name='landa_admin_section_modal_config'),
     path('admin/courses/<path:course_id>/', AdminCourseDetailView.as_view(), name='landa_admin_course_detail'),
     path('admin/users/', AdminUsersView.as_view(), name='landa_admin_users'),
     path('admin/users/<int:user_id>/', AdminUserDetailView.as_view(), name='landa_admin_user_detail'),
