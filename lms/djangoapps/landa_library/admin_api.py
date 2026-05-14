@@ -462,6 +462,8 @@ class AdminCourseModalConfigView(APIView):
         'completion_enabled': True,
         'completion_title': '',
         'completion_description': '',
+        'completion_social_type': '',
+        'completion_social_link': '',
     }
 
     def get(self, request, course_id):
@@ -479,6 +481,8 @@ class AdminCourseModalConfigView(APIView):
                 'completion_enabled': cfg.completion_enabled,
                 'completion_title': cfg.completion_title,
                 'completion_description': cfg.completion_description,
+                'completion_social_type': cfg.completion_social_type,
+                'completion_social_link': cfg.completion_social_link,
                 'updated_at': cfg.updated_at.isoformat() if cfg.updated_at else None,
             }
         except CourseModalConfig.DoesNotExist:
@@ -500,6 +504,8 @@ class AdminCourseModalConfigView(APIView):
                 'completion_enabled': data.get('completion_enabled', True),
                 'completion_title': data.get('completion_title', ''),
                 'completion_description': data.get('completion_description', ''),
+                'completion_social_type': data.get('completion_social_type', ''),
+                'completion_social_link': data.get('completion_social_link', ''),
                 'updated_by': request.user,
             }
         )

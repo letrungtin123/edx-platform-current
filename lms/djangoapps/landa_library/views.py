@@ -386,6 +386,8 @@ class CourseModalConfigPublicView(APIView):
                 'completion_enabled': cfg.completion_enabled,
                 'completion_title': cfg.completion_title or '',
                 'completion_description': cfg.completion_description or '',
+                'completion_social_type': cfg.completion_social_type or '',
+                'completion_social_link': cfg.completion_social_link or '',
             })
         except CourseModalConfig.DoesNotExist:
             return Response({
@@ -399,6 +401,8 @@ class CourseModalConfigPublicView(APIView):
                 'completion_enabled': True,
                 'completion_title': '',
                 'completion_description': '',
+                'completion_social_type': '',
+                'completion_social_link': '',
             })
 
 

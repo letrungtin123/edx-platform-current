@@ -239,6 +239,21 @@ class CourseModalConfig(models.Model):
         verbose_name="Mô tả Completion Modal"
     )
 
+    SOCIAL_TYPE_CHOICES = [
+        ('zaloOA', 'Zalo OA'),
+        ('facebook', 'Facebook'),
+        ('website', 'Website'),
+        ('instagram', 'Instagram'),
+    ]
+    completion_social_type = models.CharField(
+        max_length=20, choices=SOCIAL_TYPE_CHOICES, blank=True, default='',
+        verbose_name="Loại mạng xã hội"
+    )
+    completion_social_link = models.URLField(
+        blank=True, default='',
+        verbose_name="Link mạng xã hội"
+    )
+
     # ── Metadata ──
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
