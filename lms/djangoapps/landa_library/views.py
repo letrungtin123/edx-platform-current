@@ -41,7 +41,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig
+from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig, UserBadge
 from lms.djangoapps.landa_library.serializers import (
     DocumentCategorySerializer,
     LibraryDocumentSerializer,
@@ -406,4 +406,65 @@ class CourseModalConfigPublicView(APIView):
             })
 
 
+class UserBadgeView(APIView):
+    """
+    GET /api/landa/v1/user-badges/
+        Trả về danh sách danh hiệu của user hiện tại.
+    POST /api/landa/v1/user-badges/
+        Lưu danh hiệu mới (FE gọi khi pass điều kiện).
+    PATCH /api/landa/v1/user-badges/
+        Update trạng thái is_shown (FE gọi khi tắt modal chúc mừng).
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request):
+        badges = UserBadge.objects.filter(user=request.user)
+        data = [
+            {
+                "badge_id": b.badge_id,
+                "is_shown": b.is_shown,
+                "earned_at": b.earned_at.isoformat()
+            } for b in badges
+        ]
+        return Response(data)
+
+    def post(self, request):
+        badge_id = request.data.get("badge_id")
+        if not badge_id:
+            return Response({"error": "badge_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        badge, created = UserBadge.objects.get_or_create(
+            user=request.user,
+            badge_id=badge_id
+        )
+        return Response({
+            "success": True,
+            "badge_id": badge.badge_id,
+            "is_shown": badge.is_shown,
+            "earned_at": badge.earned_at.isoformat(),
+            "created": created
+        }, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+    def patch(self, request):
+        badge_id = request.data.get("badge_id")
+        is_shown = request.data.get("is_shown")
+        
+        if not badge_id or is_shown is None:
+            return Response({"error": "badge_id and is_shown are required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            badge = UserBadge.objects.get(user=request.user, badge_id=badge_id)
+            # is_shown có thể truyền lên boolean (true/false) hoặc chuỗi ('true'/'false')
+            if isinstance(is_shown, str):
+                is_shown = is_shown.lower() == 'true'
+            
+            badge.is_shown = bool(is_shown)
+            badge.save(update_fields=['is_shown'])
+            return Response({"success": True, "badge_id": badge_id, "is_shown": badge.is_shown})
+        except UserBadge.DoesNotExist:
+            return Response({"error": "Badge not found"}, status=status.HTTP_404_NOT_FOUND)

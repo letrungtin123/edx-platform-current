@@ -14,6 +14,7 @@ from lms.djangoapps.landa_library.views import (
     DocumentListView,
     change_password,
     document_download,
+    UserBadgeView,
 )
 from lms.djangoapps.landa_library.admin_api import (
     AdminDocumentsView,
@@ -87,6 +88,11 @@ urlpatterns = [
         'v1/course-modal-config/',
         CourseModalConfigPublicView.as_view(),
         name='landa_course_modal_config',
+    ),
+    path(
+        'v1/user-badges/',
+        UserBadgeView.as_view(),
+        name='landa_user_badges',
     ),
 
     # ══════════════════════════════════════════

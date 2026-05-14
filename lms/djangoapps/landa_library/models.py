@@ -363,3 +363,39 @@ class HelpPage(models.Model):
         if not self.slug:
             self.slug = slugify(self.title, allow_unicode=True)
         super().save(*args, **kwargs)
+
+
+class UserBadge(models.Model):
+    """
+    Lưu trữ danh hiệu (Gamification) do user đạt được.
+    Được đánh giá và tạo từ Frontend (FE-5173).
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='badges',
+        verbose_name="Learner"
+    )
+    badge_id = models.CharField(
+        max_length=100,
+        db_index=True,
+        verbose_name="Badge ID"
+    )
+    is_shown = models.BooleanField(
+        default=False,
+        verbose_name="Đã hiển thị chúc mừng"
+    )
+    earned_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Ngày đạt"
+    )
+
+    class Meta:
+        ordering = ['-earned_at']
+        unique_together = ['user', 'badge_id']
+        verbose_name = 'User Badge'
+        verbose_name_plural = 'User Badges'
+
+    def __str__(self):
+        return f"{self.user.username} - {self.badge_id}"
+
