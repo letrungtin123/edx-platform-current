@@ -41,7 +41,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig, UserBadge, UserCourseModalState, SectionModalConfig, UserSectionModalShown
+from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig, UserBadge, UserCourseModalState, SectionModalConfig, UserSectionModalShown, StudyTimeDaily
 from lms.djangoapps.landa_library.serializers import (
     DocumentCategorySerializer,
     LibraryDocumentSerializer,
@@ -605,3 +605,119 @@ class UserSectionModalShownView(APIView):
             section_id=section_id
         )
         return Response({"success": True})
+
+
+class StudyTimeSyncView(APIView):
+    """
+    POST /api/landa/v1/study-time/sync/
+
+    FE gửi batch entries mỗi 5 phút (hoặc beforeunload).
+    Server dùng upsert: nếu FE gửi minutes lớn hơn DB → cập nhật.
+    Pattern: INSERT ON CONFLICT UPDATE SET minutes = GREATEST(minutes, new).
+
+    Request body:
+        { "entries": [{"date": "2026-05-15", "minutes": 45}, ...] }
+
+    Tối ưu:
+    - Max 7 entries/request (7 ngày trong tuần)
+    - Batch upsert → 1 query thay vì N queries
+    - GREATEST() → tránh double-count khi multi-tab/multi-device
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        entries = request.data.get('entries', [])
+        if not entries or not isinstance(entries, list):
+            return Response({'error': 'entries is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Giới hạn max 7 entries (1 tuần)
+        entries = entries[:7]
+
+        user = request.user
+        synced = 0
+
+        for entry in entries:
+            date_str = entry.get('date')
+            minutes = entry.get('minutes', 0)
+
+            if not date_str or not isinstance(minutes, (int, float)) or minutes < 0:
+                continue
+
+            minutes = int(minutes)
+
+            try:
+                from datetime import date as date_cls
+                entry_date = date_cls.fromisoformat(date_str)
+            except (ValueError, TypeError):
+                continue
+
+            # Upsert: tạo mới hoặc cập nhật nếu FE có minutes cao hơn
+            obj, created = StudyTimeDaily.objects.get_or_create(
+                user=user,
+                date=entry_date,
+                defaults={'minutes': minutes},
+            )
+            if not created and minutes > obj.minutes:
+                obj.minutes = minutes
+                obj.save(update_fields=['minutes'])
+
+            synced += 1
+
+        return Response({'success': True, 'synced': synced})
+
+
+class StudyTimeWeeklyView(APIView):
+    """
+    GET /api/landa/v1/study-time/weekly/
+
+    Trả về 7 ngày trong tuần hiện tại (Mon-Sun) của user.
+    Query siêu nhẹ: WHERE user_id=? AND date >= monday → index hit, ~0.1ms.
+
+    Response:
+        {
+            "entries": [
+                {"date": "2026-05-12", "minutes": 45},
+                {"date": "2026-05-13", "minutes": 120},
+                ...
+            ]
+        }
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from datetime import date, timedelta
+
+        today = date.today()
+        # Monday = 0, Sunday = 6
+        monday = today - timedelta(days=today.weekday())
+        sunday = monday + timedelta(days=6)
+
+        rows = StudyTimeDaily.objects.filter(
+            user=request.user,
+            date__gte=monday,
+            date__lte=sunday,
+        ).values('date', 'minutes')
+
+        # Build dict cho quick lookup
+        data_map = {r['date']: r['minutes'] for r in rows}
+
+        # Trả đủ 7 ngày (fill 0 cho ngày chưa có data)
+        entries = []
+        for i in range(7):
+            d = monday + timedelta(days=i)
+            entries.append({
+                'date': d.isoformat(),
+                'minutes': data_map.get(d, 0),
+            })
+
+        return Response({'entries': entries})

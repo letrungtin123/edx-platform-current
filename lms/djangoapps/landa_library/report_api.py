@@ -858,3 +858,90 @@ class MyCourseProgressView(APIView):
                 return Response({"error": "ID khoá học không hợp lệ"}, status=status.HTTP_400_BAD_REQUEST)
             log.error(f"MyCourseProgressView Error: {e}")
             return Response({"error": "Lỗi nội bộ hệ thống"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class AdminUserBadgesView(APIView):
+    """
+    GET /api/landa/admin/user-badges/?username=...
+
+    Admin xem danh sách badges đã đạt của 1 user cụ thể.
+    Dùng trong LearnerDetailModal trên frontend-shell.
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [IsSuperUser]
+
+    def get(self, request):
+        username = request.query_params.get('username')
+        if not username:
+            return Response({'error': 'username is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        from lms.djangoapps.landa_library.models import UserBadge
+        badges = UserBadge.objects.filter(user=user).order_by('-earned_at')
+        data = [
+            {
+                'badge_id': b.badge_id,
+                'earned_at': b.earned_at.isoformat(),
+            }
+            for b in badges
+        ]
+        return Response({'username': username, 'badges': data})
+
+
+class AdminUserStudyTimeView(APIView):
+    """
+    GET /api/landa/admin/user-study-time/?username=...
+
+    Admin xem study time tuần hiện tại của 1 user cụ thể.
+    Dùng trong LearnerDetailModal trên frontend-shell.
+    """
+    authentication_classes = [
+        JwtAuthentication,
+        BearerAuthenticationAllowInactiveUser,
+        SessionAuthenticationAllowInactiveUser,
+    ]
+    permission_classes = [IsSuperUser]
+
+    def get(self, request):
+        username = request.query_params.get('username')
+        if not username:
+            return Response({'error': 'username is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        from datetime import date, timedelta
+        from lms.djangoapps.landa_library.models import StudyTimeDaily
+
+        today = date.today()
+        monday = today - timedelta(days=today.weekday())
+        sunday = monday + timedelta(days=6)
+
+        rows = StudyTimeDaily.objects.filter(
+            user=user,
+            date__gte=monday,
+            date__lte=sunday,
+        ).values('date', 'minutes')
+
+        data_map = {r['date']: r['minutes'] for r in rows}
+
+        entries = []
+        for i in range(7):
+            d = monday + timedelta(days=i)
+            entries.append({
+                'date': d.isoformat(),
+                'minutes': data_map.get(d, 0),
+            })
+
+        return Response({'username': username, 'entries': entries})
+

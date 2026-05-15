@@ -517,3 +517,41 @@ class UserSectionModalShown(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.course_id} / {self.section_id}"
+
+
+class StudyTimeDaily(models.Model):
+    """
+    Lưu số phút học mỗi ngày per user.
+
+    FE buffer trong localStorage và sync lên server mỗi 5 phút.
+    Server dùng GREATEST() pattern khi upsert → tránh double-count
+    khi user mở nhiều tab hoặc đa thiết bị.
+
+    Cleanup: management command xóa rows > 7 ngày (chạy cron hàng ngày).
+    Với 1M users × 7 ngày = tối đa 7M rows (~140MB) — cực nhẹ.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='study_times',
+        verbose_name="Learner",
+    )
+    date = models.DateField(
+        db_index=True,
+        verbose_name="Ngày",
+    )
+    minutes = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Số phút học",
+    )
+
+    class Meta:
+        unique_together = ['user', 'date']
+        verbose_name = 'Study Time Daily'
+        verbose_name_plural = 'Study Time Daily'
+        indexes = [
+            models.Index(fields=['user', '-date']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.date}: {self.minutes}m"

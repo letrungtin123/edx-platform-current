@@ -18,6 +18,8 @@ from lms.djangoapps.landa_library.views import (
     UserCourseModalStateView,
     SectionModalConfigPublicView,
     UserSectionModalShownView,
+    StudyTimeSyncView,
+    StudyTimeWeeklyView,
 )
 from lms.djangoapps.landa_library.admin_api import (
     AdminDocumentsView,
@@ -44,6 +46,8 @@ from lms.djangoapps.landa_library.report_api import (
     ReportChartTrendView,
     TopCoursesView,
     UncompletedLearnersView,
+    AdminUserBadgesView,
+    AdminUserStudyTimeView,
 )
 from lms.djangoapps.landa_library.help_docs_api import (
     HelpFoldersView,
@@ -113,6 +117,17 @@ urlpatterns = [
         UserSectionModalShownView.as_view(),
         name='landa_section_modal_shown',
     ),
+    # ── Study Time ──
+    path(
+        'v1/study-time/sync/',
+        StudyTimeSyncView.as_view(),
+        name='landa_study_time_sync',
+    ),
+    path(
+        'v1/study-time/weekly/',
+        StudyTimeWeeklyView.as_view(),
+        name='landa_study_time_weekly',
+    ),
 
     # ══════════════════════════════════════════
     # Admin API — dùng cho frontend-shell
@@ -138,6 +153,8 @@ urlpatterns = [
     path('admin/report-uncompleted-learners/', UncompletedLearnersView.as_view(), name='landa_admin_report_uncompleted_learners'),
     path('admin/learner-detail/', LearnerDetailView.as_view(), name='landa_admin_learner_detail'),
     path('admin/audit-logs/', AdminAuditLogsView.as_view(), name='landa_admin_audit_logs'),
+    path('admin/user-badges/', AdminUserBadgesView.as_view(), name='landa_admin_user_badges'),
+    path('admin/user-study-time/', AdminUserStudyTimeView.as_view(), name='landa_admin_user_study_time'),
     path('v1/public/test-nots/', TestNotsView.as_view(), name='test_nots'),
 
     # ── Help Docs API (superuser write, staff read) ──
