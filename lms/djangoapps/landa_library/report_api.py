@@ -644,7 +644,20 @@ class UncompletedLearnersView(APIView):
 
                 # Ngày cuối học viên hoàn thành 1 block bất kỳ
                 last_done = last_completion_map.get(uid)
-                is_stalled = (last_done is None or last_done < stalled_threshold) and avg_progress < 100.0
+
+                # is_stalled: chưa học block nào trong 30 ngày VÀ chưa hoàn thành
+                # Trường hợp last_done is None (chưa học block nào bao giờ):
+                #   - Nếu mới enroll trong vòng 30 ngày → "Đang học / mới tham gia" (NOT stalled)
+                #   - Nếu enroll đã hơn 30 ngày mà chưa học → "Ngưng HĐ" (stalled)
+                latest_enrollment = item.get('latest_enrollment')
+                if last_done is None:
+                    enrolled_recently = (
+                        latest_enrollment is not None
+                        and latest_enrollment >= stalled_threshold
+                    )
+                    is_stalled = not enrolled_recently and avg_progress < 100.0
+                else:
+                    is_stalled = last_done < stalled_threshold and avg_progress < 100.0
 
                 results.append({
                     "username": username,
