@@ -172,81 +172,10 @@ class ReportSummaryView(APIView):
                 month_enrollments = month_enrollments.filter(user__in=users_qs)
             total_enrollments = month_enrollments.count()
 
-            # ── 7. Trend — 4 tháng (2 tháng trước, tháng hiện tại, 1 tháng sau) ─────────────────
+            # ── 7. Trend (Removed) ─────────────────
+            # Tính toán uncompleted_trend đã được loại bỏ để tối ưu query DB
+            # do frontend không còn sử dụng biểu đồ này nữa.
             uncompleted_trend = []
-            today = timezone.now()
-
-            from django.db.models import F, IntegerField as DjIntField
-            from django.db.models.functions import Coalesce as CoalesceF
-            import calendar
-            from datetime import datetime
-
-            for offset in [-2, -1, 0, 1]:
-                target_month = month + offset
-                target_year = year
-                if target_month <= 0:
-                    target_month += 12
-                    target_year -= 1
-                elif target_month > 12:
-                    target_month -= 12
-                    target_year += 1
-
-                target_last_day = calendar.monthrange(target_year, target_month)[1]
-                m_end = timezone.make_aware(datetime(target_year, target_month, target_last_day, 23, 59, 59))
-
-                # Nếu là tháng hoàn toàn trong tương lai, gán 0
-                if m_end > today and (target_year > today.year or (target_year == today.year and target_month > today.month)):
-                    uncompleted_trend.append({
-                        "day": f"T{target_month}/{target_year % 100}",
-                        "count": 0
-                    })
-                    continue
-
-                # Tất cả enrollment active tính đến cuối tháng này
-                enroll_qs = CourseEnrollment.objects.filter(
-                    is_active=True,
-                    created__lte=m_end,
-                )
-                if group_id:
-                    enroll_qs = enroll_qs.filter(user__in=users_qs)
-
-                total_m = enroll_qs.count()
-
-                # Annotate completion counts
-                user_done_sq = Subquery(
-                    BlockCompletion.objects.filter(
-                        user_id=OuterRef('user_id'),
-                        context_key=OuterRef('course_id'),
-                        completion__gte=1.0,
-                    ).order_by().values('user_id', 'context_key').annotate(
-                        cnt=Count('block_key', distinct=True)
-                    ).values('cnt')[:1],
-                    output_field=DjIntField(),
-                )
-                course_total_sq = Subquery(
-                    BlockCompletion.objects.filter(
-                        context_key=OuterRef('course_id'),
-                        completion__gte=1.0,
-                    ).order_by().values('context_key').annotate(
-                        cnt=Count('block_key', distinct=True)
-                    ).values('cnt')[:1],
-                    output_field=DjIntField(),
-                )
-
-                completed_m = enroll_qs.annotate(
-                    _ud=CoalesceF(user_done_sq, Value(0)),
-                    _ct=CoalesceF(course_total_sq, Value(0)),
-                ).filter(
-                    _ct__gt=0,
-                    _ud__gte=F('_ct'),
-                ).count()
-
-                uncompleted = max(total_m - completed_m, 0)
-
-                uncompleted_trend.append({
-                    "day": f"T{target_month}/{target_year % 100}",
-                    "count": uncompleted
-                })
 
             return Response({
                 "meta": {
@@ -292,10 +221,11 @@ class ReportChartTrendView(APIView):
             year = int(request.query_params.get('year', now.year))
             metric = request.query_params.get('metric', 'total_learners')
             group_id = request.query_params.get('group_id')
+            group_by_org = request.query_params.get('group_by_org') == 'true'
 
             import calendar
             from datetime import datetime
-            from lms.djangoapps.landa_groups.models import SubGroup
+            from lms.djangoapps.landa_groups.models import SubGroup, OrgGroup
 
             # Giới hạn tháng: nếu năm hiện tại thì chỉ tới tháng hiện tại
             if year > now.year:
@@ -306,6 +236,44 @@ class ReportChartTrendView(APIView):
                 max_month = 12
 
             result = []
+            
+            if group_by_org:
+                if group_id:
+                    org_groups = OrgGroup.objects.filter(id=group_id)
+                else:
+                    org_groups = OrgGroup.objects.all()
+
+                for month in range(1, 13):
+                    month_data = {"month": f"T{month}"}
+                    
+                    if month > max_month:
+                        for og in org_groups:
+                            month_data[og.name] = 0
+                        result.append(month_data)
+                        continue
+
+                    month_start = timezone.make_aware(datetime(year, month, 1))
+                    last_day = calendar.monthrange(year, month)[1]
+                    month_end = timezone.make_aware(datetime(year, month, last_day, 23, 59, 59))
+                    
+                    for og in org_groups:
+                        og_users = User.objects.filter(group_memberships__subgroup__org_group=og, is_active=True).distinct()
+                        val = 0
+                        if metric == 'total_learners':
+                            val = og_users.filter(date_joined__lte=month_end).count()
+                        elif metric == 'completion_rate':
+                            sg_enroll = CourseEnrollment.objects.filter(is_active=True, user__in=og_users, created__lte=month_end)
+                            val = _calc_avg_completion_rate(sg_enroll)
+                        elif metric == 'active_learners':
+                            val = og_users.filter(last_login__gte=month_start, last_login__lte=month_end).count()
+                        elif metric == 'total_enrollments':
+                            val = CourseEnrollment.objects.filter(user__in=og_users, created__gte=month_start, created__lte=month_end).count()
+                        
+                        month_data[og.name] = val
+                        
+                    result.append(month_data)
+                    
+                return Response({"year": year, "metric": metric, "data": result, "is_grouped": True})
             
             if group_id:
                 subgroups = SubGroup.objects.filter(org_group_id=group_id)
