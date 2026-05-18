@@ -792,8 +792,17 @@ class LearnerDetailView(APIView):
                 "is_completed": progress >= 100.0
             })
 
+        # Lấy thông tin group/subgroup
+        user_groups = []
+        for membership in user.group_memberships.select_related('subgroup', 'subgroup__org_group').all():
+            user_groups.append({
+                "group_name": membership.subgroup.org_group.name,
+                "subgroup_name": membership.subgroup.name
+            })
+
         return Response({
             "username": username,
+            "groups": user_groups,
             "results": results,
             "total_count": paginator.count,
             "total_pages": paginator.num_pages,
