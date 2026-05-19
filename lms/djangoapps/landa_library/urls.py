@@ -38,6 +38,10 @@ from lms.djangoapps.landa_library.admin_api import (
     AdminAuditLogsView,
     TestNotsView,
     AdminSectionModalConfigView,
+    CourseCategoryListView,
+    CourseCategoryDetailView,
+    CourseCategoryCoursesView,
+    CourseCategoryCourseRemoveView,
 )
 from lms.djangoapps.landa_library.report_api import (
     ReportSummaryView,
@@ -165,6 +169,12 @@ urlpatterns = [
     path('admin/help-pages/reorder/', HelpPageReorderView.as_view(), name='landa_help_pages_reorder'),
     path('admin/help-pages/upload-image/', HelpImageUploadView.as_view(), name='landa_help_image_upload'),
     path('admin/help-pages/<int:page_id>/', HelpPageDetailView.as_view(), name='landa_help_page_detail'),
+
+    # ── Course Categories API ──
+    path('admin/course-categories/', CourseCategoryListView.as_view(), name='landa_admin_course_categories'),
+    path('admin/course-categories/<int:pk>/', CourseCategoryDetailView.as_view(), name='landa_admin_course_category_detail'),
+    path('admin/course-categories/<int:pk>/courses/', CourseCategoryCoursesView.as_view(), name='landa_admin_course_category_courses'),
+    path('admin/course-categories/<int:pk>/courses/<path:course_id>/', CourseCategoryCourseRemoveView.as_view(), name='landa_admin_course_category_course_remove'),
 
     # ── Group Management (landa_groups app) ──
     path('', include('lms.djangoapps.landa_groups.urls')),

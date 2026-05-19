@@ -20,13 +20,15 @@ from rest_framework.views import APIView
 from lms.djangoapps.landa_groups.audit import log_group_action
 from lms.djangoapps.landa_groups.models import (
     GroupAuditLog,
+    LandaUserRole,
     OrgGroup,
     SubGroup,
     SubGroupCourseAssignment,
     SubGroupMembership,
     SubGroupCategoryAssignment,
+    SubGroupCourseCategoryAssignment,
 )
-from lms.djangoapps.landa_library.models import DocumentCategory
+from lms.djangoapps.landa_library.models import DocumentCategory, CourseCategory, CourseCategoryMembership
 
 log = logging.getLogger(__name__)
 
@@ -172,6 +174,7 @@ class SubGroupListView(APIView):
         qs = SubGroup.objects.filter(org_group_id=group_id).annotate(
             member_count=Count('memberships', distinct=True),
             course_count=Count('course_assignments', distinct=True),
+            course_category_count=Count('course_category_assignments', distinct=True),
         ).order_by('name')
 
         search = request.query_params.get('search', '').strip()
@@ -184,6 +187,7 @@ class SubGroupListView(APIView):
             'org_group_id': group_id,
             'member_count': sg.member_count,
             'course_count': sg.course_count,
+            'course_category_count': sg.course_category_count,
             'created_at': sg.created_at.isoformat(),
         } for sg in qs]
 
@@ -259,6 +263,17 @@ class SubGroupDetailView(APIView):
             'assigned_at': c.assigned_at.isoformat(),
         } for c in categories]
 
+        # Course categories
+        course_cat_assignments = SubGroupCourseCategoryAssignment.objects.filter(
+            subgroup=sg
+        ).select_related('category').order_by('assigned_at')
+        course_categories_data = [{
+            'category_id': cc.category_id,
+            'name': cc.category.name,
+            'slug': cc.category.slug,
+            'assigned_at': cc.assigned_at.isoformat(),
+        } for cc in course_cat_assignments]
+
         return Response({
             'id': sg.id,
             'name': sg.name,
@@ -267,9 +282,11 @@ class SubGroupDetailView(APIView):
             'member_count': len(members),
             'course_count': len(courses),
             'category_count': len(categories_data),
+            'course_category_count': len(course_categories_data),
             'members': members,
             'courses': courses,
             'categories': categories_data,
+            'course_categories': course_categories_data,
             'created_at': sg.created_at.isoformat(),
         })
 
@@ -596,6 +613,108 @@ class CategoryRevokeView(APIView):
 
 
 # ══════════════════════════════════════════════
+# Course Category Assignment API
+# ══════════════════════════════════════════════
+
+class CourseCategoryAssignView(APIView):
+    """
+    GET  /api/landa/admin/subgroups/<sg_id>/course-categories/  — List course categories đã phân
+    POST /api/landa/admin/subgroups/<sg_id>/course-categories/  — Phân course categories cho subgroup (bulk)
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def _get_sg_or_404(self, sg_id):
+        try:
+            return SubGroup.objects.get(id=sg_id)
+        except SubGroup.DoesNotExist:
+            return None
+
+    def get(self, request, sg_id):
+        sg = self._get_sg_or_404(sg_id)
+        if not sg:
+            return Response({'error': 'Sub Group không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        assignments = SubGroupCourseCategoryAssignment.objects.filter(
+            subgroup=sg
+        ).select_related('category').order_by('assigned_at')
+        data = [{
+            'category_id': a.category_id,
+            'name': a.category.name,
+            'slug': a.category.slug,
+            'assigned_at': a.assigned_at.isoformat(),
+        } for a in assignments]
+        return Response({'course_categories': data, 'total': len(data)})
+
+    def post(self, request, sg_id):
+        sg = self._get_sg_or_404(sg_id)
+        if not sg:
+            return Response({'error': 'Sub Group không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        category_ids = request.data.get('category_ids', [])
+        if not category_ids or not isinstance(category_ids, list):
+            return Response({'error': 'category_ids phải là danh sách'}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_ids = set(
+            CourseCategory.objects.filter(id__in=category_ids).values_list('id', flat=True)
+        )
+        invalid = [cid for cid in category_ids if cid not in valid_ids]
+        if invalid:
+            return Response(
+                {'error': f'Course Category không tồn tại: {", ".join(map(str, invalid))}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        assigned = 0
+        skipped = 0
+        for category_id in category_ids:
+            assignment, created = SubGroupCourseCategoryAssignment.objects.get_or_create(
+                subgroup=sg, category_id=category_id,
+                defaults={'assigned_by': request.user},
+            )
+            if created:
+                assigned += 1
+                log_group_action(
+                    request, GroupAuditLog.ACTION_ASSIGN_COURSE_CATEGORY,
+                    'CourseCategoryAssignment',
+                    str(category_id), entity_id=str(assignment.id),
+                    detail=f'subgroup={sg.name}',
+                )
+            else:
+                skipped += 1
+
+        return Response({'success': True, 'assigned': assigned, 'skipped': skipped})
+
+
+class CourseCategoryRevokeView(APIView):
+    """
+    DELETE /api/landa/admin/subgroups/<sg_id>/course-categories/<cat_id>/  — Revoke course category
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def delete(self, request, sg_id, cat_id):
+        try:
+            assignment = SubGroupCourseCategoryAssignment.objects.get(
+                subgroup_id=sg_id, category_id=cat_id,
+            )
+        except SubGroupCourseCategoryAssignment.DoesNotExist:
+            return Response(
+                {'error': 'Course Category chưa được phân cho sub group này'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        assignment.delete()
+        log_group_action(
+            request, GroupAuditLog.ACTION_REVOKE_COURSE_CATEGORY,
+            'CourseCategoryAssignment',
+            str(cat_id), entity_id=str(cat_id),
+            detail=f'subgroup_id={sg_id}',
+        )
+        return Response({'success': True})
+
+
+# ══════════════════════════════════════════════
 # Group Audit Logs API
 # ══════════════════════════════════════════════
 
@@ -697,31 +816,64 @@ class MyGroupCoursesView(APIView):
         ).values_list('subgroup_id', flat=True)
 
         if not subgroup_ids:
-            return Response({'results': [], 'count': 0, 'next': None, 'previous': None})
+            return Response({
+                'pagination': {'count': 0, 'next': None, 'previous': None, 'num_pages': 1},
+                'results': [],
+                'categories': [],
+            })
 
-        # Bước 2: Lấy distinct course_ids được phân cho các subgroups đó
-        course_ids = SubGroupCourseAssignment.objects.filter(
+        # Bước 2a: Course IDs từ direct assignment (legacy)
+        direct_course_ids = set(
+            SubGroupCourseAssignment.objects.filter(
+                subgroup_id__in=subgroup_ids,
+            ).values_list('course_id', flat=True).distinct()
+        )
+
+        # Bước 2b: Course IDs từ category-based assignment
+        category_ids = SubGroupCourseCategoryAssignment.objects.filter(
             subgroup_id__in=subgroup_ids,
-        ).values_list('course_id', flat=True).distinct()
+        ).values_list('category_id', flat=True).distinct()
 
-        if not course_ids:
-            return Response({'results': [], 'count': 0, 'next': None, 'previous': None})
+        category_course_ids = set()
+        # Build course → categories mapping
+        course_categories_map = {}  # course_id → [{id, name, slug}]
+        if category_ids:
+            memberships = CourseCategoryMembership.objects.filter(
+                category_id__in=category_ids,
+            ).select_related('category')
+            for m in memberships:
+                category_course_ids.add(m.course_id)
+                if m.course_id not in course_categories_map:
+                    course_categories_map[m.course_id] = []
+                cat_info = {'id': m.category_id, 'name': m.category.name, 'slug': m.category.slug}
+                # Tránh duplicate
+                if cat_info not in course_categories_map[m.course_id]:
+                    course_categories_map[m.course_id].append(cat_info)
+
+        # Merge all course_ids
+        all_course_ids = direct_course_ids | category_course_ids
+
+        if not all_course_ids:
+            return Response({
+                'pagination': {'count': 0, 'next': None, 'previous': None, 'num_pages': 1},
+                'results': [],
+                'categories': [],
+            })
 
         # Bước 3: Fetch CourseOverview
-        overviews = CourseOverview.objects.filter(id__in=list(course_ids))
-        
+        overviews = CourseOverview.objects.filter(id__in=list(all_course_ids))
+
         # CHỈ CHO PHÉP STAFF THẤY COURSE PRIVATE
         if not user.is_staff and not user.is_superuser:
             overviews = overviews.filter(visible_to_staff_only=False)
-        
+
         search_term = request.query_params.get('search_term', '').strip()
         if search_term:
             overviews = overviews.filter(display_name__icontains=search_term)
-            
+
         overviews = overviews.order_by('display_name')
 
-        # Bước 4: Serialize theo format tương thích với /api/courses/v1/courses/
-        # để FE-5173 CoursesPage không cần đổi logic render
+        # Bước 4: Serialize
         results = []
         for c in overviews:
             image_url = ''
@@ -730,13 +882,13 @@ class MyGroupCoursesView(APIView):
             elif hasattr(c, 'course_image_url'):
                 image_url = c.course_image_url or ''
 
+            course_id_str = str(c.id)
             results.append({
-                'id': str(c.id),
+                'id': course_id_str,
                 'name': c.display_name,
                 'number': c.number,
                 'org': c.org,
                 'short_description': getattr(c, 'short_description', '') or '',
-                # CourseOverview dùng self_paced (bool), map sang string cho FE
                 'pacing': 'self' if getattr(c, 'self_paced', True) else 'instructor',
                 'start': c.start.isoformat() if c.start else None,
                 'end': c.end.isoformat() if c.end else None,
@@ -745,7 +897,16 @@ class MyGroupCoursesView(APIView):
                     'course_image': {'uri': image_url},
                     'course_video': {'uri': None},
                 },
+                'categories': course_categories_map.get(course_id_str, []),
             })
+
+        # Bước 5: Build unique categories list cho FE filter
+        seen_cats = {}
+        for cats in course_categories_map.values():
+            for cat in cats:
+                if cat['id'] not in seen_cats:
+                    seen_cats[cat['id']] = cat
+        all_categories = sorted(seen_cats.values(), key=lambda x: x['name'])
 
         count = len(results)
         return Response({
@@ -756,4 +917,54 @@ class MyGroupCoursesView(APIView):
                 'num_pages': 1,
             },
             'results': results,
+            'categories': all_categories,
+        })
+
+
+# ══════════════════════════════════════════════
+# Learner API — My Role
+# ══════════════════════════════════════════════
+
+class MyRoleView(APIView):
+    """
+    GET /api/landa/v0/my-role/
+
+    Trả về custom role và danh sách OrgGroup IDs mà user thuộc về.
+    Dùng bởi frontend-shell để xác định quyền truy cập cho learner_plus.
+    Auth: IsAuthenticated (không cần staff).
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # Lấy custom role (nếu có)
+        custom_role = None
+        try:
+            landa_role = LandaUserRole.objects.get(user=user)
+            custom_role = landa_role.role
+        except LandaUserRole.DoesNotExist:
+            pass
+
+        # Lấy danh sách OrgGroup mà user thuộc về (deduplicated)
+        group_ids = []
+        group_names = []
+        if custom_role:
+            memberships = SubGroupMembership.objects.filter(
+                user=user,
+            ).select_related('subgroup__org_group').order_by('subgroup__org_group__name')
+
+            seen = set()
+            for m in memberships:
+                og = m.subgroup.org_group
+                if og.id not in seen:
+                    seen.add(og.id)
+                    group_ids.append(og.id)
+                    group_names.append(og.name)
+
+        return Response({
+            'role': custom_role,
+            'group_ids': group_ids,
+            'group_names': group_names,
         })

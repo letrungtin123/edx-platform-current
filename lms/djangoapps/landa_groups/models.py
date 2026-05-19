@@ -217,6 +217,49 @@ class SubGroupCategoryAssignment(models.Model):
         return f'{self.subgroup} ← {self.category}'
 
 
+class SubGroupCourseCategoryAssignment(models.Model):
+    """
+    Danh mục khóa học được phân cho sub group — đây là visibility record.
+
+    Ý nghĩa: learner trong subgroup này được NHÌN THẤY các courses
+    thuộc danh mục khóa học này.
+    Tương tự SubGroupCategoryAssignment (dùng cho DocumentCategory).
+    """
+    subgroup = models.ForeignKey(
+        SubGroup,
+        on_delete=models.CASCADE,
+        related_name='course_category_assignments',
+        verbose_name='Sub Group',
+    )
+    category = models.ForeignKey(
+        'landa_library.CourseCategory',
+        on_delete=models.CASCADE,
+        related_name='group_assignments',
+        verbose_name='Danh mục khóa học',
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Người phân',
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày phân')
+
+    class Meta:
+        unique_together = (('subgroup', 'category'),)
+        verbose_name = 'Sub Group Course Category Assignment'
+        verbose_name_plural = 'Sub Group Course Category Assignments'
+        indexes = [
+            models.Index(fields=['subgroup', 'category']),
+            models.Index(fields=['category']),
+        ]
+
+    def __str__(self):
+        return f'{self.subgroup} ← {self.category}'
+
+
 class GroupAuditLog(models.Model):
     """
     Audit log cho mọi action trong group management.
@@ -234,6 +277,8 @@ class GroupAuditLog(models.Model):
     ACTION_REVOKE_COURSE = 'REVOKE_COURSE'
     ACTION_ASSIGN_CATEGORY = 'ASSIGN_CATEGORY'
     ACTION_REVOKE_CATEGORY = 'REVOKE_CATEGORY'
+    ACTION_ASSIGN_COURSE_CATEGORY = 'ASSIGN_COURSE_CAT'
+    ACTION_REVOKE_COURSE_CATEGORY = 'REVOKE_COURSE_CAT'
 
     ACTION_CHOICES = [
         (ACTION_CREATE_GROUP, 'Create Org Group'),
@@ -248,6 +293,8 @@ class GroupAuditLog(models.Model):
         (ACTION_REVOKE_COURSE, 'Revoke Course'),
         (ACTION_ASSIGN_CATEGORY, 'Assign Category'),
         (ACTION_REVOKE_CATEGORY, 'Revoke Category'),
+        (ACTION_ASSIGN_COURSE_CATEGORY, 'Assign Course Category'),
+        (ACTION_REVOKE_COURSE_CATEGORY, 'Revoke Course Category'),
     ]
 
     actor = models.ForeignKey(
@@ -314,3 +361,47 @@ class GroupAuditLog(models.Model):
 
     def __str__(self):
         return f'[{self.action}] {self.actor_username} → {self.entity_type}: {self.entity_name}'
+
+
+class LandaUserRole(models.Model):
+    """
+    Custom role mở rộng cho hệ thống LANDA.
+    Tách biệt khỏi is_staff/is_superuser của Django User.
+    Hiện tại dùng cho role 'learner_plus' — user không phải staff
+    nhưng được phép truy cập report summary của group mình.
+    """
+    ROLE_LEARNER_PLUS = 'learner_plus'
+    ROLE_CHOICES = [
+        (ROLE_LEARNER_PLUS, 'Learner Plus'),
+    ]
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='landa_role',
+        primary_key=True,
+        verbose_name='User',
+    )
+    role = models.CharField(
+        max_length=30,
+        choices=ROLE_CHOICES,
+        default=ROLE_LEARNER_PLUS,
+        db_index=True,
+        verbose_name='Role',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Người gán',
+    )
+
+    class Meta:
+        verbose_name = 'Landa User Role'
+        verbose_name_plural = 'Landa User Roles'
+
+    def __str__(self):
+        return f'{self.user.username} → {self.role}'

@@ -555,3 +555,91 @@ class StudyTimeDaily(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.date}: {self.minutes}m"
+
+
+class CourseCategory(models.Model):
+    """
+    Danh mục khóa học — admin tạo tùy ý.
+    Ví dụ: "Onboarding", "Kỹ năng mềm", "Chuyên môn", "An toàn lao động"
+
+    Tương tự DocumentCategory nhưng dành cho courses.
+    Một course có thể thuộc nhiều danh mục (qua CourseCategoryMembership).
+    """
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="Tên danh mục",
+    )
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        help_text="Tự động tạo từ tên, dùng cho URL filter",
+    )
+    description = models.TextField(
+        blank=True,
+        default='',
+        verbose_name="Mô tả",
+    )
+    sort_order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Thứ tự sắp xếp",
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Cập nhật")
+
+    class Meta:
+        ordering = ['sort_order', 'name']
+        verbose_name = 'Course Category'
+        verbose_name_plural = 'Course Categories'
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name, allow_unicode=True)
+        super().save(*args, **kwargs)
+
+
+class CourseCategoryMembership(models.Model):
+    """
+    Course thuộc danh mục nào — M2M through table.
+
+    Một course có thể thuộc nhiều danh mục.
+    course_id lưu dạng string (VD: course-v1:Org+Number+Run)
+    vì CourseOverview.id là CourseKey, không phải integer FK.
+    """
+    category = models.ForeignKey(
+        CourseCategory,
+        on_delete=models.CASCADE,
+        related_name='course_memberships',
+        verbose_name='Danh mục',
+    )
+    course_id = models.CharField(
+        max_length=255,
+        db_index=True,
+        verbose_name='Course ID',
+        help_text='VD: course-v1:org+course+run',
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Người phân',
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày phân')
+
+    class Meta:
+        unique_together = (('category', 'course_id'),)
+        verbose_name = 'Course Category Membership'
+        verbose_name_plural = 'Course Category Memberships'
+        indexes = [
+            models.Index(fields=['category', 'course_id']),
+            models.Index(fields=['course_id']),
+        ]
+
+    def __str__(self):
+        return f'{self.category.name} ← {self.course_id}'
+

@@ -10,10 +10,13 @@ from lms.djangoapps.landa_groups.views import (
     CourseRevokeView,
     CategoryAssignView,
     CategoryRevokeView,
+    CourseCategoryAssignView,
+    CourseCategoryRevokeView,
     GroupAuditLogView,
     MemberListAddView,
     MemberRemoveView,
     MyGroupCoursesView,
+    MyRoleView,
     OrgGroupDetailView,
     OrgGroupListView,
     SubGroupDetailView,
@@ -39,13 +42,18 @@ urlpatterns = [
     path('admin/subgroups/<int:sg_id>/courses/', CourseAssignView.as_view(), name='landa_course_assign'),
     path('admin/subgroups/<int:sg_id>/courses/<path:course_id>/', CourseRevokeView.as_view(), name='landa_course_revoke'),
 
-    # Category Assignments
+    # Category Assignments (Document categories)
     path('admin/subgroups/<int:sg_id>/categories/', CategoryAssignView.as_view(), name='landa_category_assign'),
     path('admin/subgroups/<int:sg_id>/categories/<int:cat_id>/', CategoryRevokeView.as_view(), name='landa_category_revoke'),
+
+    # Course Category Assignments
+    path('admin/subgroups/<int:sg_id>/course-categories/', CourseCategoryAssignView.as_view(), name='landa_course_category_assign'),
+    path('admin/subgroups/<int:sg_id>/course-categories/<int:cat_id>/', CourseCategoryRevokeView.as_view(), name='landa_course_category_revoke'),
 
     # Audit Logs
     path('admin/group-audit-logs/', GroupAuditLogView.as_view(), name='landa_group_audit_logs'),
 
     # Learner API
     path('v0/my-group-courses/', MyGroupCoursesView.as_view(), name='landa_my_group_courses'),
+    path('v0/my-role/', MyRoleView.as_view(), name='landa_my_role'),
 ]

@@ -36,6 +36,26 @@ class IsSuperUser(permissions.BasePermission):
         return request.user and request.user.is_superuser
 
 
+class IsSuperUserOrLearnerPlus(permissions.BasePermission):
+    """
+    Cho phép superuser HOẶC user có custom role learner_plus.
+    Dùng cho report views.
+    """
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        if request.user.is_superuser or request.user.is_staff:
+            return True
+        # Check custom role
+        try:
+            from lms.djangoapps.landa_groups.models import LandaUserRole
+            return LandaUserRole.objects.filter(
+                user=request.user, role='learner_plus'
+            ).exists()
+        except Exception:
+            return False
+
+
 def _calc_avg_completion_rate(enrollment_qs):
     """
     Tính trung bình cộng % tiến độ của tất cả enrollment.
@@ -115,7 +135,7 @@ class ReportSummaryView(APIView):
         BearerAuthenticationAllowInactiveUser,
         SessionAuthenticationAllowInactiveUser,
     ]
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrLearnerPlus]
     parser_classes = [JSONParser]
 
     def get(self, request):
@@ -141,6 +161,26 @@ class ReportSummaryView(APIView):
             is_current_month = (month == now.month and year == now.year)
 
             group_id = request.query_params.get('group_id')
+
+            # learner_plus: bắt buộc phải có group_id + validate quyền xem group đó
+            if not request.user.is_superuser:
+                if not group_id:
+                    return Response(
+                        {"error": "Bạn chỉ được phép xem báo cáo của nhóm mình."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                from lms.djangoapps.landa_groups.models import SubGroupMembership
+                user_group_ids = list(
+                    SubGroupMembership.objects.filter(
+                        user=request.user,
+                    ).values_list('subgroup__org_group_id', flat=True).distinct()
+                )
+                if int(group_id) not in user_group_ids:
+                    return Response(
+                        {"error": "Bạn không có quyền xem báo cáo của nhóm này."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+
             users_qs = User.objects.filter(is_active=True)
             if group_id:
                 users_qs = users_qs.filter(group_memberships__subgroup__org_group_id=group_id).distinct()
@@ -212,7 +252,7 @@ class ReportChartTrendView(APIView):
         BearerAuthenticationAllowInactiveUser,
         SessionAuthenticationAllowInactiveUser,
     ]
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrLearnerPlus]
     parser_classes = [JSONParser]
 
     def get(self, request):
@@ -346,7 +386,7 @@ class TopCoursesView(APIView):
         BearerAuthenticationAllowInactiveUser,
         SessionAuthenticationAllowInactiveUser,
     ]
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrLearnerPlus]
 
     def get(self, request):
         try:
@@ -419,7 +459,7 @@ class UncompletedLearnersView(APIView):
         BearerAuthenticationAllowInactiveUser,
         SessionAuthenticationAllowInactiveUser,
     ]
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrLearnerPlus]
 
     def get(self, request):
         try:
@@ -728,7 +768,7 @@ class LearnerDetailView(APIView):
         BearerAuthenticationAllowInactiveUser,
         SessionAuthenticationAllowInactiveUser,
     ]
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrLearnerPlus]
     parser_classes = [JSONParser]
 
     def _get_actual_progress(self, user, course_key):
@@ -862,7 +902,7 @@ class AdminUserBadgesView(APIView):
         BearerAuthenticationAllowInactiveUser,
         SessionAuthenticationAllowInactiveUser,
     ]
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrLearnerPlus]
 
     def get(self, request):
         username = request.query_params.get('username')
@@ -898,7 +938,7 @@ class AdminUserStudyTimeView(APIView):
         BearerAuthenticationAllowInactiveUser,
         SessionAuthenticationAllowInactiveUser,
     ]
-    permission_classes = [IsSuperUser]
+    permission_classes = [IsSuperUserOrLearnerPlus]
 
     def get(self, request):
         username = request.query_params.get('username')

@@ -24,7 +24,10 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from lms.djangoapps.landa_library.models import DocumentCategory, LibraryDocument, CourseModalConfig, SectionModalConfig
+from lms.djangoapps.landa_library.models import (
+    DocumentCategory, LibraryDocument, CourseModalConfig, SectionModalConfig,
+    CourseCategory, CourseCategoryMembership,
+)
 from lms.djangoapps.landa_library.validators import ALLOWED_EXTENSIONS, get_file_extension
 from lms.djangoapps.landa_library.audit import log_admin_action
 from openedx.core.djangoapps.content.course_overviews.models import CourseOverview
@@ -691,8 +694,27 @@ class AdminUsersView(APIView):
             qs = qs.filter(is_superuser=True)
         elif role == 'staff':
             qs = qs.filter(is_superuser=False, is_staff=True)
+        elif role == 'learner_plus':
+            from lms.djangoapps.landa_groups.models import LandaUserRole
+            lp_user_ids = LandaUserRole.objects.filter(role='learner_plus').values_list('user_id', flat=True)
+            qs = qs.filter(id__in=lp_user_ids)
         elif role == 'learner':
-            qs = qs.filter(is_superuser=False, is_staff=False)
+            from lms.djangoapps.landa_groups.models import LandaUserRole
+            lp_user_ids = LandaUserRole.objects.filter(role='learner_plus').values_list('user_id', flat=True)
+            qs = qs.filter(is_superuser=False, is_staff=False).exclude(id__in=lp_user_ids)
+            
+        group_id = request.GET.get('group_id')
+        subgroup_id = request.GET.get('subgroup_id')
+        
+        if subgroup_id:
+            from lms.djangoapps.landa_groups.models import SubGroupMembership
+            u_ids = SubGroupMembership.objects.filter(subgroup_id=subgroup_id).values_list('user_id', flat=True)
+            qs = qs.filter(id__in=u_ids)
+        elif group_id:
+            from lms.djangoapps.landa_groups.models import SubGroupMembership, SubGroup
+            subgroups = SubGroup.objects.filter(org_group_id=group_id)
+            u_ids = SubGroupMembership.objects.filter(subgroup__in=subgroups).values_list('user_id', flat=True)
+            qs = qs.filter(id__in=u_ids)
             
         total = qs.count()
         users = list(qs[offset:offset+page_size])
@@ -706,6 +728,12 @@ class AdminUsersView(APIView):
 
         prefs = UserPreference.objects.filter(user_id__in=user_ids, key='phone')
         pref_phone_map = {p.user_id: p.value for p in prefs}
+
+        # Batch query custom roles (learner_plus)
+        from lms.djangoapps.landa_groups.models import LandaUserRole
+        custom_roles = dict(
+            LandaUserRole.objects.filter(user_id__in=user_ids).values_list('user_id', 'role')
+        )
         
         data = []
         for u in users:
@@ -713,6 +741,8 @@ class AdminUsersView(APIView):
                 u_role = 'superuser'
             elif u.is_staff:
                 u_role = 'staff'
+            elif u.id in custom_roles:
+                u_role = custom_roles[u.id]
             else:
                 u_role = 'learner'
                 
@@ -767,11 +797,19 @@ class AdminUsersView(APIView):
         elif role == 'staff':
             user.is_superuser = False
             user.is_staff = True
+        elif role == 'learner_plus':
+            user.is_superuser = False
+            user.is_staff = False
         else:
             user.is_superuser = False
             user.is_staff = False
             
         user.save()
+
+        # Tạo custom role nếu là learner_plus
+        if role == 'learner_plus':
+            from lms.djangoapps.landa_groups.models import LandaUserRole
+            LandaUserRole.objects.create(user=user, role='learner_plus', created_by=request.user)
         
         # Save phone
         set_user_preference(user, 'phone', phone)
@@ -840,12 +878,26 @@ class AdminUserDetailView(APIView):
             if new_role == 'superuser':
                 target_user.is_superuser = True
                 target_user.is_staff = True
+                from lms.djangoapps.landa_groups.models import LandaUserRole
+                LandaUserRole.objects.filter(user=target_user).delete()
             elif new_role == 'staff':
                 target_user.is_superuser = False
                 target_user.is_staff = True
+                from lms.djangoapps.landa_groups.models import LandaUserRole
+                LandaUserRole.objects.filter(user=target_user).delete()
+            elif new_role == 'learner_plus':
+                target_user.is_superuser = False
+                target_user.is_staff = False
+                from lms.djangoapps.landa_groups.models import LandaUserRole
+                LandaUserRole.objects.update_or_create(
+                    user=target_user,
+                    defaults={'role': 'learner_plus', 'created_by': request.user},
+                )
             elif new_role == 'learner':
                 target_user.is_superuser = False
                 target_user.is_staff = False
+                from lms.djangoapps.landa_groups.models import LandaUserRole
+                LandaUserRole.objects.filter(user=target_user).delete()
             changed = True
             
         if changed:
@@ -1021,3 +1073,191 @@ class AdminSectionModalConfigView(APIView):
             'SectionModalConfig', section_id, entity_id=section_id,
         )
         return Response({'success': True})
+
+
+# ══════════════════════════════════════════════
+# Course Categories API
+# ══════════════════════════════════════════════
+
+class CourseCategoryListView(APIView):
+    """
+    GET  /api/landa/admin/course-categories/  → List all course categories
+    POST /api/landa/admin/course-categories/  → Create a new course category
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser]
+
+    def get(self, request):
+        categories = CourseCategory.objects.annotate(
+            course_count=Count('course_memberships'),
+        ).order_by('sort_order', 'name')
+        return Response({
+            'results': [
+                {
+                    'id': c.id,
+                    'name': c.name,
+                    'slug': c.slug,
+                    'description': c.description,
+                    'sort_order': c.sort_order,
+                    'course_count': c.course_count,
+                    'created_at': c.created_at.isoformat() if c.created_at else None,
+                }
+                for c in categories
+            ]
+        })
+
+    def post(self, request):
+        name = (request.data.get('name') or '').strip()
+        if not name:
+            return Response({'error': 'Tên danh mục không được để trống.'}, status=status.HTTP_400_BAD_REQUEST)
+        if CourseCategory.objects.filter(name=name).exists():
+            return Response({'error': f'Danh mục "{name}" đã tồn tại.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        slug = slugify(name, allow_unicode=True)
+        if CourseCategory.objects.filter(slug=slug).exists():
+            slug = f"{slug}-{CourseCategory.objects.count() + 1}"
+
+        cat = CourseCategory.objects.create(
+            name=name,
+            slug=slug,
+            description=(request.data.get('description') or '').strip(),
+            sort_order=request.data.get('sort_order', 0),
+        )
+        log_admin_action(request, 'CREATE', 'CourseCategory', cat.name, entity_id=str(cat.id))
+        return Response({'id': cat.id, 'name': cat.name, 'slug': cat.slug}, status=status.HTTP_201_CREATED)
+
+
+class CourseCategoryDetailView(APIView):
+    """
+    PUT    /api/landa/admin/course-categories/<id>/  → Update category
+    DELETE /api/landa/admin/course-categories/<id>/  → Delete category
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser]
+
+    def put(self, request, pk):
+        try:
+            cat = CourseCategory.objects.get(pk=pk)
+        except CourseCategory.DoesNotExist:
+            return Response({'error': 'Danh mục không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
+
+        name = (request.data.get('name') or '').strip()
+        if name and name != cat.name:
+            if CourseCategory.objects.filter(name=name).exclude(pk=pk).exists():
+                return Response({'error': f'Danh mục "{name}" đã tồn tại.'}, status=status.HTTP_400_BAD_REQUEST)
+            cat.name = name
+            cat.slug = slugify(name, allow_unicode=True)
+
+        description = request.data.get('description')
+        if description is not None:
+            cat.description = description.strip()
+
+        sort_order = request.data.get('sort_order')
+        if sort_order is not None:
+            cat.sort_order = int(sort_order)
+
+        cat.save()
+        log_admin_action(request, 'UPDATE', 'CourseCategory', cat.name, entity_id=str(cat.id))
+        return Response({'id': cat.id, 'name': cat.name, 'slug': cat.slug})
+
+    def delete(self, request, pk):
+        try:
+            cat = CourseCategory.objects.get(pk=pk)
+        except CourseCategory.DoesNotExist:
+            return Response({'error': 'Danh mục không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
+
+        name = cat.name
+        cat.delete()
+        log_admin_action(request, 'DELETE', 'CourseCategory', name, entity_id=str(pk))
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CourseCategoryCoursesView(APIView):
+    """
+    GET  /api/landa/admin/course-categories/<id>/courses/  → List courses trong category
+    POST /api/landa/admin/course-categories/<id>/courses/  → Thêm courses vào category
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser]
+
+    def get(self, request, pk):
+        try:
+            cat = CourseCategory.objects.get(pk=pk)
+        except CourseCategory.DoesNotExist:
+            return Response({'error': 'Danh mục không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
+
+        memberships = CourseCategoryMembership.objects.filter(category=cat).order_by('-assigned_at')
+        course_ids = [m.course_id for m in memberships]
+
+        # Fetch CourseOverview để có display_name
+        overviews = {}
+        if course_ids:
+            for co in CourseOverview.objects.filter(id__in=course_ids):
+                overviews[str(co.id)] = co.display_name
+
+        results = []
+        for m in memberships:
+            results.append({
+                'id': m.id,
+                'course_id': m.course_id,
+                'display_name': overviews.get(m.course_id, m.course_id),
+                'assigned_at': m.assigned_at.isoformat() if m.assigned_at else None,
+            })
+
+        return Response({'results': results, 'count': len(results)})
+
+    def post(self, request, pk):
+        try:
+            cat = CourseCategory.objects.get(pk=pk)
+        except CourseCategory.DoesNotExist:
+            return Response({'error': 'Danh mục không tồn tại.'}, status=status.HTTP_404_NOT_FOUND)
+
+        course_ids = request.data.get('course_ids', [])
+        if not course_ids:
+            return Response({'error': 'Danh sách course_ids không được để trống.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        assigned = 0
+        skipped = 0
+        for cid in course_ids:
+            _, created = CourseCategoryMembership.objects.get_or_create(
+                category=cat,
+                course_id=cid,
+                defaults={'assigned_by': request.user},
+            )
+            if created:
+                assigned += 1
+            else:
+                skipped += 1
+
+        log_admin_action(
+            request, 'UPDATE', 'CourseCategory',
+            f'{cat.name}: +{assigned} courses',
+            entity_id=str(cat.id),
+        )
+        return Response({'assigned': assigned, 'skipped': skipped})
+
+
+class CourseCategoryCourseRemoveView(APIView):
+    """
+    DELETE /api/landa/admin/course-categories/<id>/courses/<course_id>/  → Xóa course khỏi category
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+    parser_classes = [JSONParser]
+
+    def delete(self, request, pk, course_id):
+        deleted, _ = CourseCategoryMembership.objects.filter(
+            category_id=pk,
+            course_id=course_id,
+        ).delete()
+
+        if deleted:
+            log_admin_action(
+                request, 'UPDATE', 'CourseCategory',
+                f'Removed {course_id}',
+                entity_id=str(pk),
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
