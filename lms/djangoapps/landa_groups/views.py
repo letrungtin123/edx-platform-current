@@ -823,11 +823,12 @@ class MyGroupCoursesView(APIView):
             })
 
         # Bước 2a: Course IDs từ direct assignment (legacy)
-        direct_course_ids = set(
-            SubGroupCourseAssignment.objects.filter(
-                subgroup_id__in=subgroup_ids,
-            ).values_list('course_id', flat=True).distinct()
-        )
+        # Tạm thời vô hiệu hoá (do yêu cầu chuyển sang phân course theo danh mục)
+        # direct_course_ids = set(
+        #     SubGroupCourseAssignment.objects.filter(
+        #         subgroup_id__in=subgroup_ids,
+        #     ).values_list('course_id', flat=True).distinct()
+        # )
 
         # Bước 2b: Course IDs từ category-based assignment
         category_ids = SubGroupCourseCategoryAssignment.objects.filter(
@@ -850,8 +851,8 @@ class MyGroupCoursesView(APIView):
                 if cat_info not in course_categories_map[m.course_id]:
                     course_categories_map[m.course_id].append(cat_info)
 
-        # Merge all course_ids
-        all_course_ids = direct_course_ids | category_course_ids
+        # Merge all course_ids (hiện tại chỉ dùng category_course_ids)
+        all_course_ids = category_course_ids
 
         if not all_course_ids:
             return Response({
