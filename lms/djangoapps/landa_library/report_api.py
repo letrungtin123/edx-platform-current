@@ -447,12 +447,38 @@ class TopCoursesView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+def _get_group_course_ids(group_id):
+    """
+    Lấy tất cả course_id thuộc 1 OrgGroup qua:
+    SubGroupCourseCategoryAssignment → CourseCategoryMembership
+    (course thuộc danh mục khóa học được gán cho subgroup)
+    Trả về set(str) để dùng cho filter __in.
+    """
+    from lms.djangoapps.landa_groups.models import SubGroupCourseCategoryAssignment
+    from lms.djangoapps.landa_library.models import CourseCategoryMembership
+
+    cat_ids = SubGroupCourseCategoryAssignment.objects.filter(
+        subgroup__org_group_id=group_id,
+    ).values_list('category_id', flat=True)
+
+    return set(
+        CourseCategoryMembership.objects.filter(
+            category_id__in=cat_ids,
+        ).values_list('course_id', flat=True)
+    )
+
+
 class UncompletedLearnersView(APIView):
     """
-    Học viên chưa hoàn thành: có enrollment active tính đến cuối tháng,
-    nhưng progress < 100%.
-    Tối ưu cho hàng triệu records bằng pre-aggregated JOINs thay vì
-    correlated subqueries.
+    Danh sách TẤT CẢ học viên trong hệ thống (hoặc theo group).
+    Base query khớp 100% với total_learners trong ReportSummaryView.
+    Mỗi user có 1 trong 3 trạng thái:
+      - not_started: tiến độ tổng = 0% (chưa complete block nào)
+      - learning:    0% < tiến độ tổng < 100%
+      - completed:   tiến độ tổng = 100% (tất cả course đều hoàn thành)
+    Tối ưu cho hàng triệu records: filter status tại DB level,
+    tính progress chỉ cho page hiện tại (5-10 items).
+    Khi có group_id: chỉ tính progress cho courses được gán cho group.
     """
     authentication_classes = [
         JwtAuthentication,
@@ -477,23 +503,59 @@ class UncompletedLearnersView(APIView):
             last_day = calendar.monthrange(year, month)[1]
             month_end = timezone.make_aware(datetime(year, month, last_day, 23, 59, 59))
 
-            from django.db.models import Max, Q, F, IntegerField as DjIntField
+            from django.db.models import Q, F, IntegerField as DjIntField
             from django.db.models.functions import Coalesce
 
-            # Base: tất cả enrollment active tính đến cuối tháng
-            qs = CourseEnrollment.objects.filter(
+            # ── Base query: KHỚP 100% với total_learners của ReportSummaryView ──
+            users_qs = User.objects.filter(is_active=True, date_joined__lte=month_end)
+            if group_id:
+                users_qs = users_qs.filter(
+                    group_memberships__subgroup__org_group_id=group_id
+                ).distinct()
+
+            # ── Lấy danh sách courses thuộc group (nếu có) ──
+            group_course_ids = None
+            if group_id:
+                group_course_ids = _get_group_course_ids(group_id)
+
+            # Search filter
+            if search:
+                users_qs = users_qs.filter(
+                    Q(username__icontains=search) | Q(email__icontains=search)
+                )
+
+            # ── Status filter tại DB level ──
+            status_filter = request.query_params.get('status', 'all')
+
+            # Build enrollment base filter (chỉ courses thuộc group nếu có)
+            enrollment_filter = Q(
+                user_id=OuterRef('id'),
                 is_active=True,
                 created__lte=month_end,
             )
-            if group_id:
-                users_qs = User.objects.filter(
-                    is_active=True,
-                    group_memberships__subgroup__org_group_id=group_id
-                ).distinct()
-                qs = qs.filter(user__in=users_qs)
+            if group_course_ids is not None:
+                enrollment_filter &= Q(course_id__in=group_course_ids)
 
-            # ── Annotate completion counts bằng Subquery ──
-            # Subquery 1: số blocks user đã complete cho course này
+            # Build completion base filter (chỉ courses thuộc group nếu có)
+            completion_filter = Q(
+                user_id=OuterRef('id'),
+                completion__gte=1.0,
+            )
+            if group_course_ids is not None:
+                completion_filter &= Q(context_key__in=group_course_ids)
+
+            # Subquery: user có ít nhất 1 BlockCompletion trong group courses
+            has_any_completion = Exists(
+                BlockCompletion.objects.filter(completion_filter)
+            )
+
+            # Subquery: user có ít nhất 1 enrollment active trong group courses
+            has_enrollment = Exists(
+                CourseEnrollment.objects.filter(enrollment_filter)
+            )
+
+            # Subquery cho incomplete enrollment:
+            # Enrollment mà user_done < course_total HOẶC course_total = 0
             user_done_sq = Subquery(
                 BlockCompletion.objects.filter(
                     user_id=OuterRef('user_id'),
@@ -504,7 +566,6 @@ class UncompletedLearnersView(APIView):
                 ).values('cnt')[:1],
                 output_field=DjIntField(),
             )
-            # Subquery 2: tổng blocks trong course (từ bất kỳ user nào)
             course_total_sq = Subquery(
                 BlockCompletion.objects.filter(
                     context_key=OuterRef('course_id'),
@@ -515,44 +576,46 @@ class UncompletedLearnersView(APIView):
                 output_field=DjIntField(),
             )
 
-            qs = qs.annotate(
-                _user_done=Coalesce(user_done_sq, Value(0)),
-                _course_total=Coalesce(course_total_sq, Value(0)),
+            incomplete_enrollment_base = CourseEnrollment.objects.filter(
+                user_id=OuterRef('id'),
+                is_active=True,
+                created__lte=month_end,
             )
-
-            # Loại bỏ enrollment đã hoàn thành (user_done >= course_total VÀ course_total > 0)
-            qs = qs.exclude(
-                _course_total__gt=0,
-                _user_done__gte=F('_course_total'),
-            )
-
-            # Group by user
-            qs = qs.values(
-                'user_id', 'user__username', 'user__email'
-            ).annotate(
-                latest_enrollment=Max('created'),
-            ).order_by('-latest_enrollment')
-
-            if search:
-                qs = qs.filter(
-                    Q(user__username__icontains=search) | Q(user__email__icontains=search)
+            if group_course_ids is not None:
+                incomplete_enrollment_base = incomplete_enrollment_base.filter(
+                    course_id__in=group_course_ids,
                 )
+            has_incomplete_enrollment = Exists(
+                incomplete_enrollment_base.annotate(
+                    _user_done=Coalesce(user_done_sq, Value(0)),
+                    _course_total=Coalesce(course_total_sq, Value(0)),
+                ).filter(
+                    Q(_course_total=0) | Q(_user_done__lt=F('_course_total'))
+                )
+            )
 
-            status_filter = request.query_params.get('status', 'all')
-            from datetime import timedelta
-            stalled_threshold = now - timedelta(days=30)
-            
-            if status_filter in ['stalled', 'learning']:
-                recent_users_sq = BlockCompletion.objects.filter(
-                    modified__gte=stalled_threshold
-                ).values('user_id')
-                
-                if status_filter == 'stalled':
-                    qs = qs.exclude(user_id__in=Subquery(recent_users_sq))
-                elif status_filter == 'learning':
-                    qs = qs.filter(user_id__in=Subquery(recent_users_sq))
+            if status_filter == 'not_started':
+                # Chưa học: không có completion nào (trong group courses)
+                users_qs = users_qs.annotate(
+                    _has_completion=has_any_completion,
+                ).filter(_has_completion=False)
+            elif status_filter == 'completed':
+                # Đã học: có enrollment + KHÔNG có enrollment nào incomplete
+                users_qs = users_qs.annotate(
+                    _has_enrollment=has_enrollment,
+                    _has_incomplete=has_incomplete_enrollment,
+                ).filter(_has_enrollment=True, _has_incomplete=False)
+            elif status_filter == 'learning':
+                # Đang học: có completion + có ít nhất 1 enrollment incomplete
+                users_qs = users_qs.annotate(
+                    _has_completion=has_any_completion,
+                    _has_incomplete=has_incomplete_enrollment,
+                ).filter(_has_completion=True, _has_incomplete=True)
 
-            paginator = Paginator(qs, page_size)
+            # Order by: mới nhất trước
+            users_qs = users_qs.order_by('-date_joined')
+
+            paginator = Paginator(users_qs, page_size)
             try:
                 page_obj = paginator.page(page)
             except (EmptyPage, PageNotAnInteger):
@@ -561,59 +624,54 @@ class UncompletedLearnersView(APIView):
                     "total_pages": paginator.num_pages, "current_page": page
                 })
 
-            # ── Tính progress + stalled cho page hiện tại (5-10 items) ──
-            stalled_threshold = now - timedelta(days=30)
-            results = []
+            # ── Tính progress cho page hiện tại (5-10 items) ──
+            page_user_ids = [u.id for u in page_obj.object_list]
 
-            # Pre-fetch: tất cả enrollment chưa hoàn thành của users trên page
-            page_user_ids = [item['user_id'] for item in page_obj.object_list]
+            if not page_user_ids:
+                return Response({
+                    "count": paginator.count,
+                    "total_pages": paginator.num_pages,
+                    "current_page": page,
+                    "results": []
+                })
 
-            # Batch tính approximate progress bằng BlockCompletion counts (nhẹ, không cần block structure cache)
-            # user_done / course_total * 100
-            from django.db.models import F as Ff, IntegerField as IntF2
-            from django.db.models.functions import Coalesce as Coal2
-
-            page_enrollments = CourseEnrollment.objects.filter(
+            # Batch query: lấy danh sách enrollments cho users trên page
+            # CHỈ courses thuộc group (nếu có group_id)
+            page_enrollments_qs = CourseEnrollment.objects.filter(
                 user_id__in=page_user_ids,
                 is_active=True,
                 created__lte=month_end,
-            ).annotate(
-                _u_done=Coal2(Subquery(
-                    BlockCompletion.objects.filter(
-                        user_id=OuterRef('user_id'),
-                        context_key=OuterRef('course_id'),
-                        completion__gte=1.0,
-                    ).order_by().values('user_id', 'context_key').annotate(
-                        c=Count('block_key', distinct=True)
-                    ).values('c')[:1],
-                    output_field=IntF2(),
-                ), Value(0)),
-                _c_total=Coal2(Subquery(
-                    BlockCompletion.objects.filter(
-                        context_key=OuterRef('course_id'),
-                        completion__gte=1.0,
-                    ).order_by().values('context_key').annotate(
-                        c=Count('block_key', distinct=True)
-                    ).values('c')[:1],
-                    output_field=IntF2(),
-                ), Value(0)),
-            ).values('user_id', 'course_id', '_u_done', '_c_total')
+            )
+            if group_course_ids is not None:
+                page_enrollments_qs = page_enrollments_qs.filter(
+                    course_id__in=group_course_ids,
+                )
 
-            # Build per-user average progress: {user_id: (avg_progress, total_courses, course_list)}
-            # Bỏ qua course chưa có block data (course_total = 0)
+            page_enrollments = page_enrollments_qs.values('user_id', 'course_id')
+
+            # Pre-fetch user objects cho calculate_actual_progress
+            page_users_by_id = {u.id: u for u in page_obj.object_list}
+
+            # Build per-user progress dùng calculate_actual_progress (chính xác 100%)
             user_progress_raw = {}  # {uid: [(prog, course_id), ...]}
+            user_enrolled_count = {}  # {uid: total enrolled courses}
             for row in page_enrollments:
                 uid_r = row['user_id']
-                total = row['_c_total']
-                done = row['_u_done']
-                if total <= 0:
-                    continue  # Bỏ qua course chưa có ai complete block nào
-                prog = min(round((done / total) * 100.0, 1), 100.0)
+                user_enrolled_count[uid_r] = user_enrolled_count.get(uid_r, 0) + 1
+                user_obj_r = page_users_by_id.get(uid_r)
+                if not user_obj_r:
+                    continue
+                try:
+                    from opaque_keys.edx.keys import CourseKey as CKey
+                    ckey = CKey.from_string(str(row['course_id']))
+                    prog = calculate_actual_progress(user_obj_r, ckey)
+                except Exception:
+                    prog = 0.0
                 if uid_r not in user_progress_raw:
                     user_progress_raw[uid_r] = []
                 user_progress_raw[uid_r].append((prog, row['course_id']))
 
-            # Tính trung bình + tìm course có progress thấp nhất để hiện tên
+            # Tính trung bình + tìm course có progress thấp nhất
             user_progress_map = {}  # {uid: (avg_progress, worst_course_id, n_courses)}
             for uid_r, entries in user_progress_raw.items():
                 if not entries:
@@ -622,58 +680,59 @@ class UncompletedLearnersView(APIView):
                 worst_entry = min(entries, key=lambda x: x[0])
                 user_progress_map[uid_r] = (avg_prog, worst_entry[1], len(entries))
 
-            # Batch fetch course names (cho course có progress thấp nhất)
+            # Batch fetch course names
             all_course_ids = [v[1] for v in user_progress_map.values()]
             course_name_map = {}
             for co in CourseOverview.objects.filter(id__in=all_course_ids):
                 course_name_map[co.id] = co.display_name
-            # ── Batch lấy ngày hoàn thành block cuối cùng cho tất cả users trên page ──
-            # 1 query duy nhất thay vì N queries .exists() — tối ưu hơn
+
+            # Batch lấy ngày hoàn thành block cuối cùng (trong group courses nếu có)
             from django.db.models import Max as MaxDate
+            last_completion_base = BlockCompletion.objects.filter(user_id__in=page_user_ids)
+            if group_course_ids is not None:
+                last_completion_base = last_completion_base.filter(
+                    context_key__in=group_course_ids,
+                )
             last_completion_qs = (
-                BlockCompletion.objects
-                .filter(user_id__in=page_user_ids)
+                last_completion_base
                 .values('user_id')
                 .annotate(last_done=MaxDate('modified'))
             )
             last_completion_map = {row['user_id']: row['last_done'] for row in last_completion_qs}
 
-            for item in page_obj.object_list:
-                uid = item['user_id']
-                username = item['user__username']
+            results = []
+            for user_obj in page_obj.object_list:
+                uid = user_obj.id
+                username = user_obj.username
 
                 progress_info = user_progress_map.get(uid, (0.0, None, 0))
                 avg_progress = progress_info[0]
                 worst_cid = progress_info[1]
                 n_courses = progress_info[2]
+                enrolled = user_enrolled_count.get(uid, 0)
+
                 worst_course_name = course_name_map.get(worst_cid, str(worst_cid) if worst_cid else '')
                 if n_courses > 1:
                     worst_course_name = f"{worst_course_name} (+{n_courses - 1} khóa khác)"
 
-                # Ngày cuối học viên hoàn thành 1 block bất kỳ
                 last_done = last_completion_map.get(uid)
 
-                # is_stalled: chưa học block nào trong 30 ngày VÀ chưa hoàn thành
-                # Trường hợp last_done is None (chưa học block nào bao giờ):
-                #   - Nếu mới enroll trong vòng 30 ngày → "Đang học / mới tham gia" (NOT stalled)
-                #   - Nếu enroll đã hơn 30 ngày mà chưa học → "Ngưng HĐ" (stalled)
-                latest_enrollment = item.get('latest_enrollment')
-                if last_done is None:
-                    enrolled_recently = (
-                        latest_enrollment is not None
-                        and latest_enrollment >= stalled_threshold
-                    )
-                    is_stalled = not enrolled_recently and avg_progress < 100.0
+                # Xác định status từ progress
+                if avg_progress >= 100.0 and enrolled > 0 and n_courses > 0:
+                    user_status = 'completed'
+                elif avg_progress > 0:
+                    user_status = 'learning'
                 else:
-                    is_stalled = last_done < stalled_threshold and avg_progress < 100.0
+                    user_status = 'not_started'
 
                 results.append({
                     "username": username,
-                    "email": item['user__email'],
+                    "email": user_obj.email,
                     "last_completion_at": last_done.isoformat() if last_done else None,
                     "progress": avg_progress,
                     "course_name": worst_course_name,
-                    "is_stalled": is_stalled,
+                    "status": user_status,
+                    "enrolled_courses": enrolled,
                 })
 
             return Response({
