@@ -259,7 +259,7 @@ class SubGroupDetailView(APIView):
             avatar = ''
             if m.user.id in profile_has_image:
                 try:
-                    avatar_urls = get_profile_image_urls_for_user(m.user, request)
+                    avatar_urls = get_profile_image_urls_for_user(m.user)
                     avatar = avatar_urls.get('small', '')
                 except Exception:
                     pass

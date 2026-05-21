@@ -714,7 +714,7 @@ class UncompletedLearnersView(APIView):
             for user_obj_av in page_obj.object_list:
                 if user_obj_av.id in profile_has_image:
                     try:
-                        urls = get_profile_image_urls_for_user(user_obj_av, request)
+                        urls = get_profile_image_urls_for_user(user_obj_av)
                         avatar_map[user_obj_av.id] = urls.get('small', '')
                     except Exception:
                         avatar_map[user_obj_av.id] = ''

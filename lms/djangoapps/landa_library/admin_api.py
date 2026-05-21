@@ -762,7 +762,7 @@ class AdminUsersView(APIView):
         for u in users:
             if u.id in profile_has_image:
                 try:
-                    urls = get_profile_image_urls_for_user(u, request)
+                    urls = get_profile_image_urls_for_user(u)
                     avatar_map[u.id] = urls.get('small', '')
                 except Exception:
                     avatar_map[u.id] = ''
