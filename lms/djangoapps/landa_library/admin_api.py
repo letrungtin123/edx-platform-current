@@ -13,6 +13,7 @@ import os
 
 from django.db.models import Count, Q
 from django.template.defaultfilters import filesizeformat
+from django.utils import timezone
 from django.utils.text import slugify
 from edx_rest_framework_extensions.auth.jwt.authentication import JwtAuthentication
 from edx_rest_framework_extensions.auth.session.authentication import (
@@ -358,6 +359,9 @@ class AdminCoursesView(APIView):
         offset = (page - 1) * page_size
         courses = qs[offset:offset + page_size]
 
+        import pytz
+        vn_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+
         data = []
         for c in courses:
             data.append({
@@ -367,8 +371,8 @@ class AdminCoursesView(APIView):
                 'visible_to_staff_only': c.visible_to_staff_only,
                 'start': c.start.strftime('%d/%m/%Y') if c.start else '-',
                 'end': c.end.strftime('%d/%m/%Y') if c.end else '-',
-                'created': c.created.strftime('%d/%m/%Y %H:%M') if c.created else '',
-                'modified': c.modified.strftime('%d/%m/%Y %H:%M') if c.modified else '',
+                'created': c.created.astimezone(vn_tz).strftime('%d/%m/%Y %H:%M') if c.created else '',
+                'modified': c.modified.astimezone(vn_tz).strftime('%d/%m/%Y %H:%M') if c.modified else '',
                 'image_url': c.image_urls.get('raw', '') if hasattr(c, 'image_urls') else getattr(c, 'course_image_url', ''),
             })
 
@@ -702,6 +706,22 @@ class AdminUsersView(APIView):
             from lms.djangoapps.landa_groups.models import LandaUserRole
             lp_user_ids = LandaUserRole.objects.filter(role='learner_plus').values_list('user_id', flat=True)
             qs = qs.filter(is_superuser=False, is_staff=False).exclude(id__in=lp_user_ids)
+        elif ',' in role:
+            # Hỗ trợ multi-role: role=learner,learner_plus
+            roles = [r.strip() for r in role.split(',') if r.strip()]
+            from lms.djangoapps.landa_groups.models import LandaUserRole
+            lp_user_ids = set(LandaUserRole.objects.filter(role='learner_plus').values_list('user_id', flat=True))
+            combined_q = Q()
+            for r in roles:
+                if r == 'superuser':
+                    combined_q |= Q(is_superuser=True)
+                elif r == 'staff':
+                    combined_q |= Q(is_superuser=False, is_staff=True)
+                elif r == 'learner_plus':
+                    combined_q |= Q(id__in=lp_user_ids)
+                elif r == 'learner':
+                    combined_q |= Q(is_superuser=False, is_staff=False) & ~Q(id__in=lp_user_ids)
+            qs = qs.filter(combined_q)
             
         group_id = request.GET.get('group_id')
         subgroup_id = request.GET.get('subgroup_id')
@@ -729,6 +749,26 @@ class AdminUsersView(APIView):
         prefs = UserPreference.objects.filter(user_id__in=user_ids, key='phone')
         pref_phone_map = {p.user_id: p.value for p in prefs}
 
+        # Batch query avatar URLs (N+1 safe)
+        # Chỉ trả avatar URL khi user đã upload ảnh (has_profile_image=True)
+        from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
+        profile_has_image = dict(
+            UserProfile.objects.filter(
+                user_id__in=user_ids,
+                profile_image_uploaded_at__isnull=False,
+            ).values_list('user_id', 'user_id')
+        )
+        avatar_map = {}
+        for u in users:
+            if u.id in profile_has_image:
+                try:
+                    urls = get_profile_image_urls_for_user(u, request)
+                    avatar_map[u.id] = urls.get('small', '')
+                except Exception:
+                    avatar_map[u.id] = ''
+            else:
+                avatar_map[u.id] = ''
+
         # Batch query custom roles (learner_plus)
         from lms.djangoapps.landa_groups.models import LandaUserRole
         custom_roles = dict(
@@ -753,7 +793,8 @@ class AdminUsersView(APIView):
                 'phone': profile_phone_map.get(u.id) or pref_phone_map.get(u.id, ''),
                 'role': u_role,
                 'is_active': u.is_active,
-                'date_joined': u.date_joined.isoformat() if u.date_joined else None
+                'date_joined': u.date_joined.isoformat() if u.date_joined else None,
+                'avatar': avatar_map.get(u.id, ''),
             })
             
         return Response({

@@ -243,12 +243,33 @@ class SubGroupDetailView(APIView):
             overviews = CourseOverview.objects.filter(id__in=course_ids).values('id', 'display_name')
             course_name_map = {str(o['id']): o['display_name'] for o in overviews}
 
-        members = [{
-            'id': m.user.id,
-            'username': m.user.username,
-            'email': m.user.email,
-            'added_at': m.added_at.isoformat(),
-        } for m in memberships]
+        from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
+        from common.djangoapps.student.models import UserProfile
+
+        member_user_ids = [m.user.id for m in memberships]
+        profile_has_image = set(
+            UserProfile.objects.filter(
+                user_id__in=member_user_ids,
+                profile_image_uploaded_at__isnull=False,
+            ).values_list('user_id', flat=True)
+        )
+
+        members = []
+        for m in memberships:
+            avatar = ''
+            if m.user.id in profile_has_image:
+                try:
+                    avatar_urls = get_profile_image_urls_for_user(m.user, request)
+                    avatar = avatar_urls.get('small', '')
+                except Exception:
+                    pass
+            members.append({
+                'id': m.user.id,
+                'username': m.user.username,
+                'email': m.user.email,
+                'avatar': avatar,
+                'added_at': m.added_at.isoformat(),
+            })
 
         courses = [{
             'course_id': a.course_id,

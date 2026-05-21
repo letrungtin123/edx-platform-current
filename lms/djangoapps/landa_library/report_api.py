@@ -163,7 +163,8 @@ class ReportSummaryView(APIView):
             group_id = request.query_params.get('group_id')
 
             # learner_plus: bắt buộc phải có group_id + validate quyền xem group đó
-            if not request.user.is_superuser:
+            # staff/superuser được phép xem tất cả
+            if not request.user.is_superuser and not request.user.is_staff:
                 if not group_id:
                     return Response(
                         {"error": "Bạn chỉ được phép xem báo cáo của nhóm mình."},
@@ -700,6 +701,26 @@ class UncompletedLearnersView(APIView):
             )
             last_completion_map = {row['user_id']: row['last_done'] for row in last_completion_qs}
 
+            # Batch fetch avatar URLs (chỉ user có ảnh đã upload)
+            from common.djangoapps.student.models import UserProfile
+            from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
+            profile_has_image = set(
+                UserProfile.objects.filter(
+                    user_id__in=page_user_ids,
+                    profile_image_uploaded_at__isnull=False,
+                ).values_list('user_id', flat=True)
+            )
+            avatar_map = {}
+            for user_obj_av in page_obj.object_list:
+                if user_obj_av.id in profile_has_image:
+                    try:
+                        urls = get_profile_image_urls_for_user(user_obj_av, request)
+                        avatar_map[user_obj_av.id] = urls.get('small', '')
+                    except Exception:
+                        avatar_map[user_obj_av.id] = ''
+                else:
+                    avatar_map[user_obj_av.id] = ''
+
             results = []
             for user_obj in page_obj.object_list:
                 uid = user_obj.id
@@ -728,6 +749,7 @@ class UncompletedLearnersView(APIView):
                 results.append({
                     "username": username,
                     "email": user_obj.email,
+                    "avatar": avatar_map.get(uid, ''),
                     "last_completion_at": last_done.isoformat() if last_done else None,
                     "progress": avg_progress,
                     "course_name": worst_course_name,
