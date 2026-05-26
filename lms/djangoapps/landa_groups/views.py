@@ -27,6 +27,11 @@ from lms.djangoapps.landa_groups.models import (
     SubGroupMembership,
     SubGroupCategoryAssignment,
     SubGroupCourseCategoryAssignment,
+    Team,
+    TeamMembership,
+    TeamCourseAssignment,
+    TeamCategoryAssignment,
+    TeamCourseCategoryAssignment,
 )
 from lms.djangoapps.landa_library.models import DocumentCategory, CourseCategory, CourseCategoryMembership
 
@@ -172,9 +177,7 @@ class SubGroupListView(APIView):
             return Response({'error': 'Org Group không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
 
         qs = SubGroup.objects.filter(org_group_id=group_id).annotate(
-            member_count=Count('memberships', distinct=True),
-            course_count=Count('course_assignments', distinct=True),
-            course_category_count=Count('course_category_assignments', distinct=True),
+            team_count=Count('teams', distinct=True),
         ).order_by('name')
 
         search = request.query_params.get('search', '').strip()
@@ -185,9 +188,7 @@ class SubGroupListView(APIView):
             'id': sg.id,
             'name': sg.name,
             'org_group_id': group_id,
-            'member_count': sg.member_count,
-            'course_count': sg.course_count,
-            'course_category_count': sg.course_category_count,
+            'team_count': sg.team_count,
             'created_at': sg.created_at.isoformat(),
         } for sg in qs]
 
@@ -233,81 +234,30 @@ class SubGroupDetailView(APIView):
         if not sg:
             return Response({'error': 'Không tìm thấy'}, status=status.HTTP_404_NOT_FOUND)
 
-        memberships = SubGroupMembership.objects.filter(subgroup=sg).select_related('user').order_by('added_at')
-        assignments = SubGroupCourseAssignment.objects.filter(subgroup=sg).order_by('assigned_at')
+        # SubGroup giờ chỉ là container — trả danh sách Teams
+        teams = Team.objects.filter(subgroup=sg).annotate(
+            member_count=Count('memberships', distinct=True),
+            course_count=Count('course_assignments', distinct=True),
+            course_category_count=Count('course_category_assignments', distinct=True),
+        ).order_by('name')
 
-        # Lấy display_name cho từng course từ CourseOverview
-        course_ids = [a.course_id for a in assignments]
-        course_name_map = {}
-        if course_ids:
-            overviews = CourseOverview.objects.filter(id__in=course_ids).values('id', 'display_name')
-            course_name_map = {str(o['id']): o['display_name'] for o in overviews}
-
-        from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
-        from common.djangoapps.student.models import UserProfile
-
-        member_user_ids = [m.user.id for m in memberships]
-        profile_has_image = set(
-            UserProfile.objects.filter(
-                user_id__in=member_user_ids,
-                profile_image_uploaded_at__isnull=False,
-            ).values_list('user_id', flat=True)
-        )
-
-        members = []
-        for m in memberships:
-            avatar = ''
-            if m.user.id in profile_has_image:
-                try:
-                    avatar_urls = get_profile_image_urls_for_user(m.user)
-                    avatar = avatar_urls.get('small', '')
-                except Exception:
-                    pass
-            members.append({
-                'id': m.user.id,
-                'username': m.user.username,
-                'email': m.user.email,
-                'avatar': avatar,
-                'added_at': m.added_at.isoformat(),
-            })
-
-        courses = [{
-            'course_id': a.course_id,
-            'display_name': course_name_map.get(a.course_id, a.course_id),
-            'assigned_at': a.assigned_at.isoformat(),
-        } for a in assignments]
-
-        categories = SubGroupCategoryAssignment.objects.filter(subgroup=sg).select_related('category').order_by('assigned_at')
-        categories_data = [{
-            'category_id': c.category_id,
-            'name': c.category.name,
-            'assigned_at': c.assigned_at.isoformat(),
-        } for c in categories]
-
-        # Course categories
-        course_cat_assignments = SubGroupCourseCategoryAssignment.objects.filter(
-            subgroup=sg
-        ).select_related('category').order_by('assigned_at')
-        course_categories_data = [{
-            'category_id': cc.category_id,
-            'name': cc.category.name,
-            'slug': cc.category.slug,
-            'assigned_at': cc.assigned_at.isoformat(),
-        } for cc in course_cat_assignments]
+        teams_data = [{
+            'id': t.id,
+            'name': t.name,
+            'subgroup_id': sg.id,
+            'member_count': t.member_count,
+            'course_count': t.course_count,
+            'course_category_count': t.course_category_count,
+            'created_at': t.created_at.isoformat(),
+        } for t in teams]
 
         return Response({
             'id': sg.id,
             'name': sg.name,
             'org_group_id': sg.org_group_id,
             'org_group_name': sg.org_group.name,
-            'member_count': len(members),
-            'course_count': len(courses),
-            'category_count': len(categories_data),
-            'course_category_count': len(course_categories_data),
-            'members': members,
-            'courses': courses,
-            'categories': categories_data,
-            'course_categories': course_categories_data,
+            'team_count': len(teams_data),
+            'teams': teams_data,
             'created_at': sg.created_at.isoformat(),
         })
 
@@ -736,6 +686,556 @@ class CourseCategoryRevokeView(APIView):
 
 
 # ══════════════════════════════════════════════
+# Team API
+# ══════════════════════════════════════════════
+
+class TeamListView(APIView):
+    """
+    GET  /api/landa/admin/subgroups/<sg_id>/teams/  — List teams của subgroup
+    POST /api/landa/admin/subgroups/<sg_id>/teams/  — Tạo team mới
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def get(self, request, sg_id):
+        if not SubGroup.objects.filter(id=sg_id).exists():
+            return Response({'error': 'Sub Group không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        qs = Team.objects.filter(subgroup_id=sg_id).annotate(
+            member_count=Count('memberships', distinct=True),
+            course_count=Count('course_assignments', distinct=True),
+            course_category_count=Count('course_category_assignments', distinct=True),
+        ).order_by('name')
+
+        search = request.query_params.get('search', '').strip()
+        if search:
+            qs = qs.filter(name__icontains=search)
+
+        data = [{
+            'id': t.id,
+            'name': t.name,
+            'subgroup_id': sg_id,
+            'member_count': t.member_count,
+            'course_count': t.course_count,
+            'course_category_count': t.course_category_count,
+            'created_at': t.created_at.isoformat(),
+        } for t in qs]
+
+        return Response({'teams': data, 'total': len(data)})
+
+    def post(self, request, sg_id):
+        try:
+            subgroup = SubGroup.objects.get(id=sg_id)
+        except SubGroup.DoesNotExist:
+            return Response({'error': 'Sub Group không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        name = request.data.get('name', '').strip()
+        if not name:
+            return Response({'error': 'Tên không được để trống'}, status=status.HTTP_400_BAD_REQUEST)
+        if Team.objects.filter(subgroup=subgroup, name=name).exists():
+            return Response({'error': f'"{name}" đã tồn tại trong nhóm này'}, status=status.HTTP_400_BAD_REQUEST)
+
+        team = Team.objects.create(subgroup=subgroup, name=name, created_by=request.user)
+        log_group_action(
+            request, GroupAuditLog.ACTION_CREATE_TEAM, 'Team', name,
+            entity_id=str(team.id), detail=f'subgroup={subgroup.name}',
+        )
+        return Response({'id': team.id, 'name': team.name}, status=status.HTTP_201_CREATED)
+
+
+class TeamDetailView(APIView):
+    """
+    GET    /api/landa/admin/teams/<id>/  — Chi tiết + members + courses + categories
+    PATCH  /api/landa/admin/teams/<id>/  — Đổi tên
+    DELETE /api/landa/admin/teams/<id>/  — Xóa
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def _get_or_404(self, pk):
+        try:
+            return Team.objects.select_related('subgroup', 'subgroup__org_group').get(id=pk)
+        except Team.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        team = self._get_or_404(pk)
+        if not team:
+            return Response({'error': 'Không tìm thấy'}, status=status.HTTP_404_NOT_FOUND)
+
+        memberships = TeamMembership.objects.filter(team=team).select_related('user').order_by('added_at')
+        assignments = TeamCourseAssignment.objects.filter(team=team).order_by('assigned_at')
+
+        # Lấy display_name cho từng course từ CourseOverview
+        course_ids = [a.course_id for a in assignments]
+        course_name_map = {}
+        if course_ids:
+            overviews = CourseOverview.objects.filter(id__in=course_ids).values('id', 'display_name')
+            course_name_map = {str(o['id']): o['display_name'] for o in overviews}
+
+        from openedx.core.djangoapps.user_api.accounts.image_helpers import get_profile_image_urls_for_user
+        from common.djangoapps.student.models import UserProfile
+
+        member_user_ids = [m.user.id for m in memberships]
+        profile_has_image = set(
+            UserProfile.objects.filter(
+                user_id__in=member_user_ids,
+                profile_image_uploaded_at__isnull=False,
+            ).values_list('user_id', flat=True)
+        )
+
+        members = []
+        for m in memberships:
+            avatar = ''
+            if m.user.id in profile_has_image:
+                try:
+                    avatar_urls = get_profile_image_urls_for_user(m.user)
+                    avatar = avatar_urls.get('small', '')
+                except Exception:
+                    pass
+            members.append({
+                'id': m.user.id,
+                'username': m.user.username,
+                'email': m.user.email,
+                'avatar': avatar,
+                'added_at': m.added_at.isoformat(),
+            })
+
+        courses = [{
+            'course_id': a.course_id,
+            'display_name': course_name_map.get(a.course_id, a.course_id),
+            'assigned_at': a.assigned_at.isoformat(),
+        } for a in assignments]
+
+        categories = TeamCategoryAssignment.objects.filter(team=team).select_related('category').order_by('assigned_at')
+        categories_data = [{
+            'category_id': c.category_id,
+            'name': c.category.name,
+            'assigned_at': c.assigned_at.isoformat(),
+        } for c in categories]
+
+        # Course categories
+        course_cat_assignments = TeamCourseCategoryAssignment.objects.filter(
+            team=team
+        ).select_related('category').order_by('assigned_at')
+        course_categories_data = [{
+            'category_id': cc.category_id,
+            'name': cc.category.name,
+            'slug': cc.category.slug,
+            'assigned_at': cc.assigned_at.isoformat(),
+        } for cc in course_cat_assignments]
+
+        return Response({
+            'id': team.id,
+            'name': team.name,
+            'subgroup_id': team.subgroup_id,
+            'subgroup_name': team.subgroup.name,
+            'org_group_id': team.subgroup.org_group_id,
+            'org_group_name': team.subgroup.org_group.name,
+            'member_count': len(members),
+            'course_count': len(courses),
+            'category_count': len(categories_data),
+            'course_category_count': len(course_categories_data),
+            'members': members,
+            'courses': courses,
+            'categories': categories_data,
+            'course_categories': course_categories_data,
+            'created_at': team.created_at.isoformat(),
+        })
+
+    def patch(self, request, pk):
+        team = self._get_or_404(pk)
+        if not team:
+            return Response({'error': 'Không tìm thấy'}, status=status.HTTP_404_NOT_FOUND)
+
+        name = request.data.get('name', '').strip()
+        if not name:
+            return Response({'error': 'Tên không được để trống'}, status=status.HTTP_400_BAD_REQUEST)
+        if Team.objects.filter(subgroup=team.subgroup, name=name).exclude(id=pk).exists():
+            return Response({'error': f'"{name}" đã tồn tại trong nhóm này'}, status=status.HTTP_400_BAD_REQUEST)
+        team.name = name
+        team.save()
+        log_group_action(request, GroupAuditLog.ACTION_UPDATE_TEAM, 'Team', name, entity_id=str(pk))
+        return Response({'success': True})
+
+    def delete(self, request, pk):
+        team = self._get_or_404(pk)
+        if not team:
+            return Response({'error': 'Không tìm thấy'}, status=status.HTTP_404_NOT_FOUND)
+        team_name = team.name
+        team.delete()  # cascade xóa memberships + assignments
+        log_group_action(request, GroupAuditLog.ACTION_DELETE_TEAM, 'Team', team_name, entity_id=str(pk))
+        return Response({'success': True})
+
+
+# ══════════════════════════════════════════════
+# Team Members API
+# ══════════════════════════════════════════════
+
+class TeamMemberListAddView(APIView):
+    """
+    GET  /api/landa/admin/teams/<team_id>/members/  — List members
+    POST /api/landa/admin/teams/<team_id>/members/  — Add members (bulk)
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def get(self, request, team_id):
+        try:
+            team = Team.objects.get(id=team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'Team không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        memberships = TeamMembership.objects.filter(team=team).select_related('user').order_by('added_at')
+        data = [{
+            'id': m.user.id,
+            'username': m.user.username,
+            'email': m.user.email,
+            'added_at': m.added_at.isoformat(),
+        } for m in memberships]
+        return Response({'members': data, 'total': len(data)})
+
+    def post(self, request, team_id):
+        try:
+            team = Team.objects.get(id=team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'Team không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        user_ids = request.data.get('user_ids', [])
+        if not user_ids or not isinstance(user_ids, list):
+            return Response({'error': 'user_ids phải là danh sách'}, status=status.HTTP_400_BAD_REQUEST)
+
+        users = User.objects.filter(id__in=user_ids)
+        if not users.exists():
+            return Response({'error': 'Không tìm thấy users'}, status=status.HTTP_404_NOT_FOUND)
+
+        added = 0
+        skipped = 0
+        for user in users:
+            membership, created = TeamMembership.objects.get_or_create(
+                team=team, user=user,
+                defaults={'added_by': request.user},
+            )
+            if created:
+                added += 1
+                log_group_action(
+                    request, GroupAuditLog.ACTION_ADD_MEMBER, 'Membership',
+                    user.username, entity_id=str(membership.id),
+                    detail=f'team={team.name}',
+                )
+            else:
+                skipped += 1
+
+        return Response({'success': True, 'added': added, 'skipped': skipped})
+
+
+class TeamMemberRemoveView(APIView):
+    """
+    DELETE /api/landa/admin/teams/<team_id>/members/<user_id>/  — Remove member
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def delete(self, request, team_id, user_id):
+        try:
+            membership = TeamMembership.objects.select_related('user', 'team').get(
+                team_id=team_id, user_id=user_id,
+            )
+        except TeamMembership.DoesNotExist:
+            return Response({'error': 'User không thuộc team này'}, status=status.HTTP_404_NOT_FOUND)
+
+        username = membership.user.username
+        team_name = membership.team.name
+        membership.delete()
+
+        log_group_action(
+            request, GroupAuditLog.ACTION_REMOVE_MEMBER, 'Membership',
+            username, entity_id=str(user_id),
+            detail=f'team={team_name}',
+        )
+        return Response({'success': True})
+
+
+# ══════════════════════════════════════════════
+# Team Course Assignment API
+# ══════════════════════════════════════════════
+
+class TeamCourseAssignView(APIView):
+    """
+    GET  /api/landa/admin/teams/<team_id>/courses/
+    POST /api/landa/admin/teams/<team_id>/courses/
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def get(self, request, team_id):
+        try:
+            team = Team.objects.get(id=team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'Team không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        assignments = TeamCourseAssignment.objects.filter(team=team).order_by('assigned_at')
+        course_ids = [a.course_id for a in assignments]
+
+        course_name_map = {}
+        if course_ids:
+            overviews = CourseOverview.objects.filter(id__in=course_ids).values('id', 'display_name')
+            course_name_map = {str(o['id']): o['display_name'] for o in overviews}
+
+        data = [{
+            'course_id': a.course_id,
+            'display_name': course_name_map.get(a.course_id, a.course_id),
+            'assigned_at': a.assigned_at.isoformat(),
+        } for a in assignments]
+
+        return Response({'courses': data, 'total': len(data)})
+
+    def post(self, request, team_id):
+        try:
+            team = Team.objects.get(id=team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'Team không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        course_ids = request.data.get('course_ids', [])
+        if not course_ids or not isinstance(course_ids, list):
+            return Response({'error': 'course_ids phải là danh sách'}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_ids = set(
+            str(cid) for cid in CourseOverview.objects.filter(id__in=course_ids).values_list('id', flat=True)
+        )
+        invalid = [cid for cid in course_ids if cid not in valid_ids]
+        if invalid:
+            return Response(
+                {'error': f'Course không tồn tại: {", ".join(invalid)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        assigned = 0
+        skipped = 0
+        for course_id in course_ids:
+            assignment, created = TeamCourseAssignment.objects.get_or_create(
+                team=team, course_id=course_id,
+                defaults={'assigned_by': request.user},
+            )
+            if created:
+                assigned += 1
+                log_group_action(
+                    request, GroupAuditLog.ACTION_ASSIGN_COURSE, 'CourseAssignment',
+                    course_id, entity_id=str(assignment.id),
+                    detail=f'team={team.name}',
+                )
+            else:
+                skipped += 1
+
+        return Response({'success': True, 'assigned': assigned, 'skipped': skipped})
+
+
+class TeamCourseRevokeView(APIView):
+    """
+    DELETE /api/landa/admin/teams/<team_id>/courses/<course_id>/
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def delete(self, request, team_id, course_id):
+        try:
+            assignment = TeamCourseAssignment.objects.get(team_id=team_id, course_id=course_id)
+        except TeamCourseAssignment.DoesNotExist:
+            return Response({'error': 'Course chưa được phân cho team này'}, status=status.HTTP_404_NOT_FOUND)
+
+        assignment.delete()
+        log_group_action(
+            request, GroupAuditLog.ACTION_REVOKE_COURSE, 'CourseAssignment',
+            course_id, entity_id=course_id,
+            detail=f'team_id={team_id}',
+        )
+        return Response({'success': True})
+
+
+# ══════════════════════════════════════════════
+# Team Category Assignment API
+# ══════════════════════════════════════════════
+
+class TeamCategoryAssignView(APIView):
+    """
+    GET  /api/landa/admin/teams/<team_id>/categories/
+    POST /api/landa/admin/teams/<team_id>/categories/
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def get(self, request, team_id):
+        try:
+            team = Team.objects.get(id=team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'Team không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        assignments = TeamCategoryAssignment.objects.filter(team=team).select_related('category').order_by('assigned_at')
+        data = [{
+            'category_id': a.category_id,
+            'name': a.category.name,
+            'assigned_at': a.assigned_at.isoformat(),
+        } for a in assignments]
+        return Response({'categories': data, 'total': len(data)})
+
+    def post(self, request, team_id):
+        try:
+            team = Team.objects.get(id=team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'Team không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        category_ids = request.data.get('category_ids', [])
+        if not category_ids or not isinstance(category_ids, list):
+            return Response({'error': 'category_ids phải là danh sách'}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_ids = set(
+            DocumentCategory.objects.filter(id__in=category_ids).values_list('id', flat=True)
+        )
+        invalid = [cid for cid in category_ids if cid not in valid_ids]
+        if invalid:
+            return Response({'error': f'Category không tồn tại: {", ".join(map(str, invalid))}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        assigned = 0
+        skipped = 0
+        for category_id in category_ids:
+            assignment, created = TeamCategoryAssignment.objects.get_or_create(
+                team=team, category_id=category_id,
+                defaults={'assigned_by': request.user},
+            )
+            if created:
+                assigned += 1
+                log_group_action(
+                    request, GroupAuditLog.ACTION_ASSIGN_CATEGORY, 'CategoryAssignment',
+                    str(category_id), entity_id=str(assignment.id),
+                    detail=f'team={team.name}',
+                )
+            else:
+                skipped += 1
+
+        return Response({'success': True, 'assigned': assigned, 'skipped': skipped})
+
+
+class TeamCategoryRevokeView(APIView):
+    """
+    DELETE /api/landa/admin/teams/<team_id>/categories/<cat_id>/
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def delete(self, request, team_id, cat_id):
+        try:
+            assignment = TeamCategoryAssignment.objects.get(team_id=team_id, category_id=cat_id)
+        except TeamCategoryAssignment.DoesNotExist:
+            return Response({'error': 'Category chưa được phân cho team này'}, status=status.HTTP_404_NOT_FOUND)
+
+        assignment.delete()
+        log_group_action(
+            request, GroupAuditLog.ACTION_REVOKE_CATEGORY, 'CategoryAssignment',
+            str(cat_id), entity_id=str(cat_id),
+            detail=f'team_id={team_id}',
+        )
+        return Response({'success': True})
+
+
+# ══════════════════════════════════════════════
+# Team Course Category Assignment API
+# ══════════════════════════════════════════════
+
+class TeamCourseCategoryAssignView(APIView):
+    """
+    GET  /api/landa/admin/teams/<team_id>/course-categories/
+    POST /api/landa/admin/teams/<team_id>/course-categories/
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def get(self, request, team_id):
+        try:
+            team = Team.objects.get(id=team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'Team không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        assignments = TeamCourseCategoryAssignment.objects.filter(
+            team=team
+        ).select_related('category').order_by('assigned_at')
+        data = [{
+            'category_id': a.category_id,
+            'name': a.category.name,
+            'slug': a.category.slug,
+            'assigned_at': a.assigned_at.isoformat(),
+        } for a in assignments]
+        return Response({'course_categories': data, 'total': len(data)})
+
+    def post(self, request, team_id):
+        try:
+            team = Team.objects.get(id=team_id)
+        except Team.DoesNotExist:
+            return Response({'error': 'Team không tồn tại'}, status=status.HTTP_404_NOT_FOUND)
+
+        category_ids = request.data.get('category_ids', [])
+        if not category_ids or not isinstance(category_ids, list):
+            return Response({'error': 'category_ids phải là danh sách'}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_ids = set(
+            CourseCategory.objects.filter(id__in=category_ids).values_list('id', flat=True)
+        )
+        invalid = [cid for cid in category_ids if cid not in valid_ids]
+        if invalid:
+            return Response(
+                {'error': f'Course Category không tồn tại: {", ".join(map(str, invalid))}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        assigned = 0
+        skipped = 0
+        for category_id in category_ids:
+            assignment, created = TeamCourseCategoryAssignment.objects.get_or_create(
+                team=team, category_id=category_id,
+                defaults={'assigned_by': request.user},
+            )
+            if created:
+                assigned += 1
+                log_group_action(
+                    request, GroupAuditLog.ACTION_ASSIGN_COURSE_CATEGORY,
+                    'CourseCategoryAssignment',
+                    str(category_id), entity_id=str(assignment.id),
+                    detail=f'team={team.name}',
+                )
+            else:
+                skipped += 1
+
+        return Response({'success': True, 'assigned': assigned, 'skipped': skipped})
+
+
+class TeamCourseCategoryRevokeView(APIView):
+    """
+    DELETE /api/landa/admin/teams/<team_id>/course-categories/<cat_id>/
+    """
+    authentication_classes = ADMIN_AUTH_CLASSES
+    permission_classes = [IsStaffUser]
+
+    def delete(self, request, team_id, cat_id):
+        try:
+            assignment = TeamCourseCategoryAssignment.objects.get(
+                team_id=team_id, category_id=cat_id,
+            )
+        except TeamCourseCategoryAssignment.DoesNotExist:
+            return Response(
+                {'error': 'Course Category chưa được phân cho team này'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        assignment.delete()
+        log_group_action(
+            request, GroupAuditLog.ACTION_REVOKE_COURSE_CATEGORY,
+            'CourseCategoryAssignment',
+            str(cat_id), entity_id=str(cat_id),
+            detail=f'team_id={team_id}',
+        )
+        return Response({'success': True})
+
+
+# ══════════════════════════════════════════════
 # Group Audit Logs API
 # ══════════════════════════════════════════════
 
@@ -820,8 +1320,8 @@ class MyGroupCoursesView(APIView):
     không cần thay đổi logic render.
 
     Logic:
-    1. Lấy tất cả subgroup_ids user đang là member (SubGroupMembership)
-    2. Lấy distinct course_ids từ SubGroupCourseAssignment
+    1. Lấy tất cả team_ids user đang là member (TeamMembership)
+    2. Lấy distinct course_ids từ TeamCourseCategoryAssignment
     3. Fetch CourseOverview cho từng course_id
     4. Return list courses
     """
@@ -831,29 +1331,21 @@ class MyGroupCoursesView(APIView):
     def get(self, request):
         user = request.user
 
-        # Bước 1: Lấy subgroup_ids user đang là member
-        subgroup_ids = SubGroupMembership.objects.filter(
+        # Bước 1: Lấy team_ids user đang là member
+        team_ids = TeamMembership.objects.filter(
             user=user,
-        ).values_list('subgroup_id', flat=True)
+        ).values_list('team_id', flat=True)
 
-        if not subgroup_ids:
+        if not team_ids:
             return Response({
                 'pagination': {'count': 0, 'next': None, 'previous': None, 'num_pages': 1},
                 'results': [],
                 'categories': [],
             })
 
-        # Bước 2a: Course IDs từ direct assignment (legacy)
-        # Tạm thời vô hiệu hoá (do yêu cầu chuyển sang phân course theo danh mục)
-        # direct_course_ids = set(
-        #     SubGroupCourseAssignment.objects.filter(
-        #         subgroup_id__in=subgroup_ids,
-        #     ).values_list('course_id', flat=True).distinct()
-        # )
-
-        # Bước 2b: Course IDs từ category-based assignment
-        category_ids = SubGroupCourseCategoryAssignment.objects.filter(
-            subgroup_id__in=subgroup_ids,
+        # Bước 2: Course IDs từ category-based assignment (Team level)
+        category_ids = TeamCourseCategoryAssignment.objects.filter(
+            team_id__in=team_ids,
         ).values_list('category_id', flat=True).distinct()
 
         category_course_ids = set()
@@ -973,13 +1465,13 @@ class MyRoleView(APIView):
         group_ids = []
         group_names = []
         if custom_role:
-            memberships = SubGroupMembership.objects.filter(
+            memberships = TeamMembership.objects.filter(
                 user=user,
-            ).select_related('subgroup__org_group').order_by('subgroup__org_group__name')
+            ).select_related('team__subgroup__org_group').order_by('team__subgroup__org_group__name')
 
             seen = set()
             for m in memberships:
-                og = m.subgroup.org_group
+                og = m.team.subgroup.org_group
                 if og.id not in seen:
                     seen.add(og.id)
                     group_ids.append(og.id)

@@ -88,6 +88,45 @@ class SubGroup(models.Model):
         return f'{self.org_group.name} / {self.name}'
 
 
+class Team(models.Model):
+    """
+    Cấp thứ 3 — Team thuộc SubGroup.
+    Members + assignments gắn vào Team (không gắn vào SubGroup).
+    SubGroup chỉ là container chứa Teams.
+    """
+    subgroup = models.ForeignKey(
+        SubGroup,
+        on_delete=models.CASCADE,
+        related_name='teams',
+        verbose_name='Sub Group',
+    )
+    name = models.CharField(
+        max_length=255,
+        verbose_name='Tên team',
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Người tạo',
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày tạo')
+
+    class Meta:
+        unique_together = (('subgroup', 'name'),)
+        ordering = ['name']
+        verbose_name = 'Team'
+        verbose_name_plural = 'Teams'
+        indexes = [
+            models.Index(fields=['subgroup', 'name']),
+        ]
+
+    def __str__(self):
+        return f'{self.subgroup.org_group.name} / {self.subgroup.name} / {self.name}'
+
+
 class SubGroupMembership(models.Model):
     """
     M2M through model — track user thuộc subgroup nào.
@@ -260,6 +299,166 @@ class SubGroupCourseCategoryAssignment(models.Model):
         return f'{self.subgroup} ← {self.category}'
 
 
+class TeamMembership(models.Model):
+    """
+    M2M through model — track user thuộc team nào.
+    Một user có thể thuộc nhiều team khác nhau.
+    Đây là model chính cho membership (thay thế SubGroupMembership).
+    """
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name='memberships',
+        verbose_name='Team',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='team_memberships',
+        verbose_name='User',
+    )
+    added_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Người thêm',
+    )
+    added_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày thêm')
+
+    class Meta:
+        unique_together = (('team', 'user'),)
+        verbose_name = 'Team Membership'
+        verbose_name_plural = 'Team Memberships'
+        indexes = [
+            models.Index(fields=['user', 'team']),
+        ]
+
+    def __str__(self):
+        return f'{self.user.username} → {self.team}'
+
+
+class TeamCourseAssignment(models.Model):
+    """
+    Course được phân cho team — đây là visibility record.
+    Ý nghĩa: learner trong team này được NHÌN THẤY course này.
+    """
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name='course_assignments',
+        verbose_name='Team',
+    )
+    course_id = models.CharField(
+        max_length=255,
+        db_index=True,
+        verbose_name='Course ID',
+        help_text='VD: course-v1:org+course+run',
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Người phân',
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày phân')
+
+    class Meta:
+        unique_together = (('team', 'course_id'),)
+        verbose_name = 'Team Course Assignment'
+        verbose_name_plural = 'Team Course Assignments'
+        indexes = [
+            models.Index(fields=['team', 'course_id']),
+            models.Index(fields=['course_id']),
+        ]
+
+    def __str__(self):
+        return f'{self.team} ← {self.course_id}'
+
+
+class TeamCategoryAssignment(models.Model):
+    """
+    Danh mục tài liệu được phân cho team — visibility record.
+    Learner trong team này được NHÌN THẤY các danh mục tài liệu này.
+    """
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name='category_assignments',
+        verbose_name='Team',
+    )
+    category = models.ForeignKey(
+        'landa_library.DocumentCategory',
+        on_delete=models.CASCADE,
+        related_name='team_assignments',
+        verbose_name='Danh mục tài liệu',
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Người phân',
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày phân')
+
+    class Meta:
+        unique_together = (('team', 'category'),)
+        verbose_name = 'Team Category Assignment'
+        verbose_name_plural = 'Team Category Assignments'
+        indexes = [
+            models.Index(fields=['team', 'category']),
+            models.Index(fields=['category']),
+        ]
+
+    def __str__(self):
+        return f'{self.team} ← {self.category}'
+
+
+class TeamCourseCategoryAssignment(models.Model):
+    """
+    Danh mục khóa học được phân cho team — visibility record.
+    Learner trong team này được NHÌN THẤY các courses thuộc danh mục này.
+    """
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name='course_category_assignments',
+        verbose_name='Team',
+    )
+    category = models.ForeignKey(
+        'landa_library.CourseCategory',
+        on_delete=models.CASCADE,
+        related_name='team_assignments',
+        verbose_name='Danh mục khóa học',
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='+',
+        verbose_name='Người phân',
+    )
+    assigned_at = models.DateTimeField(auto_now_add=True, verbose_name='Ngày phân')
+
+    class Meta:
+        unique_together = (('team', 'category'),)
+        verbose_name = 'Team Course Category Assignment'
+        verbose_name_plural = 'Team Course Category Assignments'
+        indexes = [
+            models.Index(fields=['team', 'category']),
+            models.Index(fields=['category']),
+        ]
+
+    def __str__(self):
+        return f'{self.team} ← {self.category}'
+
+
 class GroupAuditLog(models.Model):
     """
     Audit log cho mọi action trong group management.
@@ -271,6 +470,9 @@ class GroupAuditLog(models.Model):
     ACTION_CREATE_SUBGROUP = 'CREATE_SUBGROUP'
     ACTION_UPDATE_SUBGROUP = 'UPDATE_SUBGROUP'
     ACTION_DELETE_SUBGROUP = 'DELETE_SUBGROUP'
+    ACTION_CREATE_TEAM = 'CREATE_TEAM'
+    ACTION_UPDATE_TEAM = 'UPDATE_TEAM'
+    ACTION_DELETE_TEAM = 'DELETE_TEAM'
     ACTION_ADD_MEMBER = 'ADD_MEMBER'
     ACTION_REMOVE_MEMBER = 'REMOVE_MEMBER'
     ACTION_ASSIGN_COURSE = 'ASSIGN_COURSE'
@@ -287,6 +489,9 @@ class GroupAuditLog(models.Model):
         (ACTION_CREATE_SUBGROUP, 'Create Sub Group'),
         (ACTION_UPDATE_SUBGROUP, 'Update Sub Group'),
         (ACTION_DELETE_SUBGROUP, 'Delete Sub Group'),
+        (ACTION_CREATE_TEAM, 'Create Team'),
+        (ACTION_UPDATE_TEAM, 'Update Team'),
+        (ACTION_DELETE_TEAM, 'Delete Team'),
         (ACTION_ADD_MEMBER, 'Add Member'),
         (ACTION_REMOVE_MEMBER, 'Remove Member'),
         (ACTION_ASSIGN_COURSE, 'Assign Course'),
@@ -319,7 +524,7 @@ class GroupAuditLog(models.Model):
         max_length=30,
         db_index=True,
         verbose_name='Entity type',
-        help_text='OrgGroup | SubGroup | Membership | CourseAssignment | CategoryAssignment',
+        help_text='OrgGroup | SubGroup | Team | Membership | CourseAssignment | CategoryAssignment',
     )
     entity_id = models.CharField(
         max_length=255,

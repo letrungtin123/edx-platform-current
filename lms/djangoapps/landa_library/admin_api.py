@@ -563,16 +563,16 @@ class AdminCourseNotificationView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        from lms.djangoapps.landa_groups.models import SubGroupCourseAssignment, SubGroupMembership
+        from lms.djangoapps.landa_groups.models import TeamCourseAssignment, TeamMembership
 
-        # 1. Tìm các subgroups được assign course này
-        assigned_subgroups = SubGroupCourseAssignment.objects.filter(
+        # 1. Tìm các teams được assign course này
+        assigned_teams = TeamCourseAssignment.objects.filter(
             course_id=str(course_key)
-        ).values_list('subgroup_id', flat=True)
+        ).values_list('team_id', flat=True)
 
-        # 2. Tìm tất cả users đang ở trong các subgroups đó
-        allowed_user_ids = set(SubGroupMembership.objects.filter(
-            subgroup_id__in=assigned_subgroups
+        # 2. Tìm tất cả users đang ở trong các teams đó
+        allowed_user_ids = set(TeamMembership.objects.filter(
+            team_id__in=assigned_teams
         ).values_list('user_id', flat=True))
 
         # 3. Chỉ lấy những enrolled users có mặt trong group đó
@@ -727,13 +727,13 @@ class AdminUsersView(APIView):
         subgroup_id = request.GET.get('subgroup_id')
         
         if subgroup_id:
-            from lms.djangoapps.landa_groups.models import SubGroupMembership
-            u_ids = SubGroupMembership.objects.filter(subgroup_id=subgroup_id).values_list('user_id', flat=True)
+            from lms.djangoapps.landa_groups.models import TeamMembership
+            u_ids = TeamMembership.objects.filter(team__subgroup_id=subgroup_id).values_list('user_id', flat=True)
             qs = qs.filter(id__in=u_ids)
         elif group_id:
-            from lms.djangoapps.landa_groups.models import SubGroupMembership, SubGroup
+            from lms.djangoapps.landa_groups.models import TeamMembership, SubGroup
             subgroups = SubGroup.objects.filter(org_group_id=group_id)
-            u_ids = SubGroupMembership.objects.filter(subgroup__in=subgroups).values_list('user_id', flat=True)
+            u_ids = TeamMembership.objects.filter(team__subgroup__in=subgroups).values_list('user_id', flat=True)
             qs = qs.filter(id__in=u_ids)
             
         total = qs.count()

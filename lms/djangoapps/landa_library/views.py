@@ -110,9 +110,9 @@ class DocumentListView(ListAPIView):
         )
 
         if not user.is_staff and not user.is_superuser:
-            from lms.djangoapps.landa_groups.models import SubGroupCategoryAssignment
-            allowed_category_ids = SubGroupCategoryAssignment.objects.filter(
-                subgroup__memberships__user=user
+            from lms.djangoapps.landa_groups.models import TeamCategoryAssignment
+            allowed_category_ids = TeamCategoryAssignment.objects.filter(
+                team__memberships__user=user
             ).values_list('category_id', flat=True)
             qs = qs.filter(category_id__in=allowed_category_ids)
 
@@ -178,9 +178,9 @@ class CategorySummaryView(APIView):
         )
 
         if not user.is_staff and not user.is_superuser:
-            from lms.djangoapps.landa_groups.models import SubGroupCategoryAssignment
-            allowed_category_ids = SubGroupCategoryAssignment.objects.filter(
-                subgroup__memberships__user=user
+            from lms.djangoapps.landa_groups.models import TeamCategoryAssignment
+            allowed_category_ids = TeamCategoryAssignment.objects.filter(
+                team__memberships__user=user
             ).values_list('category_id', flat=True)
             categories = categories.filter(id__in=allowed_category_ids)
 
@@ -219,10 +219,10 @@ def document_download(request, doc_id):
 
     user = request.user
     if not user.is_staff and not user.is_superuser:
-        from lms.djangoapps.landa_groups.models import SubGroupCategoryAssignment
-        has_access = SubGroupCategoryAssignment.objects.filter(
+        from lms.djangoapps.landa_groups.models import TeamCategoryAssignment
+        has_access = TeamCategoryAssignment.objects.filter(
             category=doc.category,
-            subgroup__memberships__user=user
+            team__memberships__user=user
         ).exists()
         if not has_access:
             raise Http404("Document not found")

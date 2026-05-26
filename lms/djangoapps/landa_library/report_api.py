@@ -161,6 +161,7 @@ class ReportSummaryView(APIView):
             is_current_month = (month == now.month and year == now.year)
 
             group_id = request.query_params.get('group_id')
+            subgroup_id = request.query_params.get('subgroup_id')
 
             # learner_plus: bắt buộc phải có group_id + validate quyền xem group đó
             # staff/superuser được phép xem tất cả
@@ -170,11 +171,11 @@ class ReportSummaryView(APIView):
                         {"error": "Bạn chỉ được phép xem báo cáo của nhóm mình."},
                         status=status.HTTP_403_FORBIDDEN,
                     )
-                from lms.djangoapps.landa_groups.models import SubGroupMembership
+                from lms.djangoapps.landa_groups.models import TeamMembership
                 user_group_ids = list(
-                    SubGroupMembership.objects.filter(
+                    TeamMembership.objects.filter(
                         user=request.user,
-                    ).values_list('subgroup__org_group_id', flat=True).distinct()
+                    ).values_list('team__subgroup__org_group_id', flat=True).distinct()
                 )
                 if int(group_id) not in user_group_ids:
                     return Response(
@@ -183,12 +184,14 @@ class ReportSummaryView(APIView):
                     )
 
             users_qs = User.objects.filter(is_active=True)
-            if group_id:
-                users_qs = users_qs.filter(group_memberships__subgroup__org_group_id=group_id).distinct()
+            if subgroup_id:
+                users_qs = users_qs.filter(team_memberships__team__subgroup_id=subgroup_id).distinct()
+            elif group_id:
+                users_qs = users_qs.filter(team_memberships__team__subgroup__org_group_id=group_id).distinct()
             else:
-                # Khi không chọn group cụ thể: chỉ tính users thuộc ít nhất 1 OrgGroup
+                # Khi không chọn group cụ thể: chỉ tính users thuộc ít nhất 1 Team
                 # Khớp với widget "Tổng lượt đăng ký theo Group" (source of truth)
-                users_qs = users_qs.filter(group_memberships__isnull=False).distinct()
+                users_qs = users_qs.filter(team_memberships__isnull=False).distinct()
 
             # ── 1. User Metrics ──────────────────────────────────────────
             total_learners = users_qs.filter(date_joined__lte=month_end).count()
@@ -209,16 +212,21 @@ class ReportSummaryView(APIView):
             ).count()
 
             # ── 2. Tổng lượt đăng ký trong tháng ──────────────────────────
-            # Khớp 100% với widget: luôn sum per SubGroup
-            from lms.djangoapps.landa_groups.models import SubGroup
+            # Khớp 100% với widget: luôn sum per Team
+            from lms.djangoapps.landa_groups.models import Team as TeamModel
             total_enrollments = 0
-            target_sgs = SubGroup.objects.filter(org_group_id=group_id) if group_id else SubGroup.objects.all()
-            for sg in target_sgs:
-                sg_users = User.objects.filter(
-                    group_memberships__subgroup=sg, is_active=True
+            if subgroup_id:
+                target_teams = TeamModel.objects.filter(subgroup_id=subgroup_id)
+            elif group_id:
+                target_teams = TeamModel.objects.filter(subgroup__org_group_id=group_id)
+            else:
+                target_teams = TeamModel.objects.all()
+            for tm in target_teams:
+                tm_users = User.objects.filter(
+                    team_memberships__team=tm, is_active=True
                 ).distinct()
                 total_enrollments += CourseEnrollment.objects.filter(
-                    user__in=sg_users,
+                    user__in=tm_users,
                     created__gte=month_start, created__lte=month_end,
                 ).count()
 
@@ -271,6 +279,7 @@ class ReportChartTrendView(APIView):
             year = int(request.query_params.get('year', now.year))
             metric = request.query_params.get('metric', 'total_learners')
             group_id = request.query_params.get('group_id')
+            subgroup_id = request.query_params.get('subgroup_id')
             group_by_org = request.query_params.get('group_by_org') == 'true'
             # grouped=false: filter theo group nhưng KHÔNG breakdown SubGroup
             # Tránh đếm trùng user thuộc nhiều SubGroup → khớp với ReportSummaryView
@@ -278,7 +287,7 @@ class ReportChartTrendView(APIView):
 
             import calendar
             from datetime import datetime
-            from lms.djangoapps.landa_groups.models import SubGroup, OrgGroup
+            from lms.djangoapps.landa_groups.models import SubGroup, OrgGroup, Team as TeamModel
 
             # Giới hạn tháng: nếu năm hiện tại thì chỉ tới tháng hiện tại
             if year > now.year:
@@ -290,11 +299,16 @@ class ReportChartTrendView(APIView):
 
             result = []
 
-            # Pre-compute group users nếu có group_id (dùng cho simple mode)
+            # Pre-compute group users nếu có group_id/subgroup_id (dùng cho simple mode)
             group_users_qs = None
-            if group_id:
+            if subgroup_id:
                 group_users_qs = User.objects.filter(
-                    group_memberships__subgroup__org_group_id=group_id,
+                    team_memberships__team__subgroup_id=subgroup_id,
+                    is_active=True,
+                ).distinct()
+            elif group_id:
+                group_users_qs = User.objects.filter(
+                    team_memberships__team__subgroup__org_group_id=group_id,
                     is_active=True,
                 ).distinct()
             
@@ -318,7 +332,7 @@ class ReportChartTrendView(APIView):
                     month_end = timezone.make_aware(datetime(year, month, last_day, 23, 59, 59))
                     
                     for og in org_groups:
-                        og_users = User.objects.filter(group_memberships__subgroup__org_group=og, is_active=True).distinct()
+                        og_users = User.objects.filter(team_memberships__team__subgroup__org_group=og, is_active=True).distinct()
                         val = 0
                         if metric == 'total_learners':
                             val = og_users.filter(date_joined__lte=month_end).count()
@@ -328,14 +342,14 @@ class ReportChartTrendView(APIView):
                         elif metric == 'active_learners':
                             val = og_users.filter(last_login__gte=month_start, last_login__lte=month_end).count()
                         elif metric == 'total_enrollments':
-                            # Sum per SubGroup: khớp với view chi tiết group
-                            # (user thuộc nhiều SubGroup → đếm ở mỗi SubGroup)
-                            for sg in SubGroup.objects.filter(org_group=og):
-                                sg_users = User.objects.filter(
-                                    group_memberships__subgroup=sg, is_active=True
+                            # Sum per Team: khớp với view chi tiết group
+                            from lms.djangoapps.landa_groups.models import Team as TM
+                            for tm in TM.objects.filter(subgroup__org_group=og):
+                                tm_users = User.objects.filter(
+                                    team_memberships__team=tm, is_active=True
                                 ).distinct()
                                 val += CourseEnrollment.objects.filter(
-                                    user__in=sg_users,
+                                    user__in=tm_users,
                                     created__gte=month_start, created__lte=month_end,
                                 ).count()
                         
@@ -345,6 +359,41 @@ class ReportChartTrendView(APIView):
                     
                 return Response({"year": year, "metric": metric, "data": result, "is_grouped": True})
             
+            if subgroup_id and grouped:
+                # Breakdown theo Team trong SubGroup — dùng khi chọn SubGroup cụ thể
+                teams = TeamModel.objects.filter(subgroup_id=subgroup_id)
+                for month in range(1, 13):
+                    month_data = {"month": f"T{month}"}
+
+                    if month > max_month:
+                        for tm in teams:
+                            month_data[tm.name] = 0
+                        result.append(month_data)
+                        continue
+
+                    month_start = timezone.make_aware(datetime(year, month, 1))
+                    last_day = calendar.monthrange(year, month)[1]
+                    month_end = timezone.make_aware(datetime(year, month, last_day, 23, 59, 59))
+
+                    for tm in teams:
+                        tm_users = User.objects.filter(team_memberships__team=tm, is_active=True).distinct()
+                        val = 0
+                        if metric == 'total_learners':
+                            val = tm_users.filter(date_joined__lte=month_end).count()
+                        elif metric == 'completion_rate':
+                            tm_enroll = CourseEnrollment.objects.filter(is_active=True, user__in=tm_users, created__lte=month_end)
+                            val = _calc_avg_completion_rate(tm_enroll)
+                        elif metric == 'active_learners':
+                            val = tm_users.filter(last_login__gte=month_start, last_login__lte=month_end).count()
+                        elif metric == 'total_enrollments':
+                            val = CourseEnrollment.objects.filter(user__in=tm_users, created__gte=month_start, created__lte=month_end).count()
+
+                        month_data[tm.name] = val
+
+                    result.append(month_data)
+
+                return Response({"year": year, "metric": metric, "data": result, "is_grouped": True})
+
             if group_id and grouped:
                 # Breakdown theo SubGroup — dùng cho GroupEnrollmentsWidget
                 # Lưu ý: user thuộc nhiều SubGroup sẽ bị đếm ở cả 2 → tổng có thể > card
@@ -364,7 +413,7 @@ class ReportChartTrendView(APIView):
                     month_end = timezone.make_aware(datetime(year, month, last_day, 23, 59, 59))
                     
                     for sg in subgroups:
-                        sg_users = User.objects.filter(group_memberships__subgroup=sg, is_active=True).distinct()
+                        sg_users = User.objects.filter(team_memberships__team__subgroup=sg, is_active=True).distinct()
                         val = 0
                         if metric == 'total_learners':
                             val = sg_users.filter(date_joined__lte=month_end).count()
@@ -381,7 +430,7 @@ class ReportChartTrendView(APIView):
                     result.append(month_data)
             else:
                 # Simple mode — không breakdown SubGroup
-                # Nếu có group_id: filter theo users thuộc OrgGroup (deduplicated)
+                # Nếu có group_id/subgroup_id: filter theo users (deduplicated)
                 # Logic khớp 100% với ReportSummaryView
                 for month in range(1, 13):
                     if month > max_month:
@@ -408,16 +457,20 @@ class ReportChartTrendView(APIView):
                             qs = qs.filter(id__in=group_users_qs.values('id'))
                         val = qs.count()
                     elif metric == 'total_enrollments':
-                        # Khớp widget: luôn sum per SubGroup
-                        from lms.djangoapps.landa_groups.models import SubGroup as SG
+                        # Khớp widget: luôn sum per Team
                         val = 0
-                        target_sgs = SG.objects.filter(org_group_id=group_id) if group_id else SG.objects.all()
-                        for sg in target_sgs:
-                            sg_u = User.objects.filter(
-                                group_memberships__subgroup=sg, is_active=True
+                        if subgroup_id:
+                            target_teams = TeamModel.objects.filter(subgroup_id=subgroup_id)
+                        elif group_id:
+                            target_teams = TeamModel.objects.filter(subgroup__org_group_id=group_id)
+                        else:
+                            target_teams = TeamModel.objects.all()
+                        for tm in target_teams:
+                            tm_u = User.objects.filter(
+                                team_memberships__team=tm, is_active=True
                             ).distinct()
                             val += CourseEnrollment.objects.filter(
-                                user__in=sg_u,
+                                user__in=tm_u,
                                 created__gte=month_start, created__lte=month_end,
                             ).count()
                     else:
@@ -428,7 +481,8 @@ class ReportChartTrendView(APIView):
                         "value": val
                     })
 
-            return Response({"year": year, "metric": metric, "data": result, "is_grouped": bool(group_id and grouped)})
+            is_grouped = bool(subgroup_id and grouped) or bool(group_id and grouped)
+            return Response({"year": year, "metric": metric, "data": result, "is_grouped": is_grouped})
         except Exception as e:
             log.exception("Error generating chart trend")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -447,6 +501,7 @@ class TopCoursesView(APIView):
             page = int(request.query_params.get('page', 1))
             page_size = int(request.query_params.get('page_size', 5))
             group_id = request.query_params.get('group_id')
+            subgroup_id = request.query_params.get('subgroup_id')
 
             now = timezone.now()
             month = int(request.query_params.get('month', now.month))
@@ -463,8 +518,11 @@ class TopCoursesView(APIView):
                 created__lte=month_end,
             )
             
-            if group_id:
-                users_qs = User.objects.filter(is_active=True, group_memberships__subgroup__org_group_id=group_id).distinct()
+            if subgroup_id:
+                users_qs = User.objects.filter(is_active=True, team_memberships__team__subgroup_id=subgroup_id).distinct()
+                qs = qs.filter(user__in=users_qs)
+            elif group_id:
+                users_qs = User.objects.filter(is_active=True, team_memberships__team__subgroup__org_group_id=group_id).distinct()
                 qs = qs.filter(user__in=users_qs)
 
             qs = qs.values('course_id').annotate(
@@ -508,11 +566,11 @@ def _get_group_course_ids(group_id):
     (course thuộc danh mục khóa học được gán cho subgroup)
     Trả về set(str) để dùng cho filter __in.
     """
-    from lms.djangoapps.landa_groups.models import SubGroupCourseCategoryAssignment
+    from lms.djangoapps.landa_groups.models import TeamCourseCategoryAssignment
     from lms.djangoapps.landa_library.models import CourseCategoryMembership
 
-    cat_ids = SubGroupCourseCategoryAssignment.objects.filter(
-        subgroup__org_group_id=group_id,
+    cat_ids = TeamCourseCategoryAssignment.objects.filter(
+        team__subgroup__org_group_id=group_id,
     ).values_list('category_id', flat=True)
 
     return set(
@@ -547,6 +605,7 @@ class UncompletedLearnersView(APIView):
             page_size = int(request.query_params.get('page_size', 5))
             search = request.query_params.get('search', '').strip()
             group_id = request.query_params.get('group_id')
+            subgroup_id = request.query_params.get('subgroup_id')
 
             now = timezone.now()
             month = int(request.query_params.get('month', now.month))
@@ -562,9 +621,13 @@ class UncompletedLearnersView(APIView):
 
             # ── Base query: KHỚP 100% với total_learners của ReportSummaryView ──
             users_qs = User.objects.filter(is_active=True, date_joined__lte=month_end)
-            if group_id:
+            if subgroup_id:
                 users_qs = users_qs.filter(
-                    group_memberships__subgroup__org_group_id=group_id
+                    team_memberships__team__subgroup_id=subgroup_id
+                ).distinct()
+            elif group_id:
+                users_qs = users_qs.filter(
+                    team_memberships__team__subgroup__org_group_id=group_id
                 ).distinct()
 
             # ── Lấy danh sách courses thuộc group (nếu có) ──
@@ -968,10 +1031,11 @@ class LearnerDetailView(APIView):
 
         # Lấy thông tin group/subgroup
         user_groups = []
-        for membership in user.group_memberships.select_related('subgroup', 'subgroup__org_group').all():
+        for membership in user.team_memberships.select_related('team', 'team__subgroup', 'team__subgroup__org_group').all():
             user_groups.append({
-                "group_name": membership.subgroup.org_group.name,
-                "subgroup_name": membership.subgroup.name
+                "group_name": membership.team.subgroup.org_group.name,
+                "subgroup_name": membership.team.subgroup.name,
+                "team_name": membership.team.name
             })
 
         return Response({
