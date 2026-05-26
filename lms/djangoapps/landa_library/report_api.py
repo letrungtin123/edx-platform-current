@@ -188,10 +188,8 @@ class ReportSummaryView(APIView):
                 users_qs = users_qs.filter(team_memberships__team__subgroup_id=subgroup_id).distinct()
             elif group_id:
                 users_qs = users_qs.filter(team_memberships__team__subgroup__org_group_id=group_id).distinct()
-            else:
-                # Khi không chọn group cụ thể: chỉ tính users thuộc ít nhất 1 Team
-                # Khớp với widget "Tổng lượt đăng ký theo Group" (source of truth)
-                users_qs = users_qs.filter(team_memberships__isnull=False).distinct()
+            # Khi không chọn group cụ thể ("Tất cả doanh nghiệp"):
+            # Tính tất cả active users — khớp với UncompletedLearnersView
 
             # ── 1. User Metrics ──────────────────────────────────────────
             total_learners = users_qs.filter(date_joined__lte=month_end).count()
