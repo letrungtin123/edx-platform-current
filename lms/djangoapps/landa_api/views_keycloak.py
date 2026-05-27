@@ -29,23 +29,36 @@ from openedx.core.djangoapps.oauth_dispatch.api import create_dot_access_token
 
 logger = logging.getLogger(__name__)
 
-# Keycloak config — đọc từ Django settings (lms.yml)
-# Fallback về staging defaults cho local dev
+# Keycloak config — BẮT BUỘC đọc từ Django settings (lms.yml)
+# Không có fallback — thiếu config thì trả None
 def _get_kc_config():
-    """Lấy Keycloak config từ settings, fallback staging defaults."""
-    kc = getattr(settings, 'KEYCLOAK_OIDC', {})
+    """
+    Lấy Keycloak config từ settings.KEYCLOAK_OIDC.
+    Trả None nếu chưa cấu hình — view sẽ trả 500 generic.
+
+    Config cần thiết trong lms.yml:
+        KEYCLOAK_OIDC:
+            TOKEN_URL: "https://idp.example.com/realms/.../protocol/openid-connect/token"
+            USERINFO_URL: "https://idp.example.com/realms/.../protocol/openid-connect/userinfo"
+            CLIENT_ID: "lms-client"
+            CLIENT_SECRET: "your-secret"
+    """
+    kc = getattr(settings, 'KEYCLOAK_OIDC', None)
+    if not kc:
+        logger.error('[KeycloakExchange] settings.KEYCLOAK_OIDC not configured in lms.yml')
+        return None
+
+    required_keys = ('TOKEN_URL', 'USERINFO_URL', 'CLIENT_ID', 'CLIENT_SECRET')
+    missing = [k for k in required_keys if not kc.get(k)]
+    if missing:
+        logger.error('[KeycloakExchange] KEYCLOAK_OIDC missing keys: %s', ', '.join(missing))
+        return None
+
     return {
-        'token_url': kc.get(
-            'TOKEN_URL',
-            'https://idp.l-a.vn/realms/la-staging/protocol/openid-connect/token',
-        ),
-        'userinfo_url': kc.get(
-            'USERINFO_URL',
-            'https://idp.l-a.vn/realms/la-staging/protocol/openid-connect/userinfo',
-        ),
-        'client_id': kc.get('CLIENT_ID', 'lms-dev'),
-        # Staging secret — production PHẢI override qua settings.KEYCLOAK_OIDC
-        'client_secret': kc.get('CLIENT_SECRET', 'vX0BzfxQ6F2gvAUlsoJZ0dbJq7Ds1XZ3'),
+        'token_url': kc['TOKEN_URL'],
+        'userinfo_url': kc['USERINFO_URL'],
+        'client_id': kc['CLIENT_ID'],
+        'client_secret': kc['CLIENT_SECRET'],
     }
 
 
@@ -104,10 +117,9 @@ class KeycloakTokenExchangeView(APIView):
             )
 
         kc = _get_kc_config()
-        if not kc['client_secret']:
-            logger.error('[KeycloakExchange] KEYCLOAK_OIDC.CLIENT_SECRET not configured')
+        if not kc:
             return Response(
-                {'error': 'server_error', 'error_description': 'Keycloak not configured'},
+                {'error': 'server_error', 'error_description': 'Invalid credentials'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
